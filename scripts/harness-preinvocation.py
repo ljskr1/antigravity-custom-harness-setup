@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+"""
+Antigravity PreInvocation Lifecycle Hook
+Enforces deterministic Step 0 checks and bridges local Ollama models with Cloud Gemini.
+"""
+import json
+import os
+import sys
+import urllib.request
+
+def main():
+    try:
+        raw_input = sys.stdin.read()
+        payload = json.loads(raw_input) if raw_input.strip() else {}
+    except Exception:
+        payload = {}
+
+    # 1. Probe local Ollama runtime (<300ms timeout)
+    local_models = []
+    try:
+        req = urllib.request.Request("http://localhost:11434/api/tags", headers={"User-Agent": "AntigravityHarness"})
+        with urllib.request.urlopen(req, timeout=0.3) as response:
+            if response.status == 200:
+                data = json.loads(response.read().decode())
+                local_models = [m.get("name", "") for m in data.get("models", []) if m.get("name")]
+    except Exception:
+        pass
+
+    # 2. Probe workspace for Graphify AST knowledge graph
+    workspace_paths = payload.get("workspacePaths", [])
+    has_graph = False
+    for path in workspace_paths:
+        if os.path.exists(os.path.join(path, "graphify-out", "graph.json")):
+            has_graph = True
+            break
+
+    # 3. Inject deterministic ephemeral system guidance
+    models_summary = ", ".join(local_models[:3]) if local_models else "None detected (Ollama offline)"
+    guidance = (
+        f"[Antigravity Harness Step 0 Gate]\n"
+        f"• Local Specialist Fleet Active: {models_summary}\n"
+        f"• Codebase AST Graph: {'Found (use graphify query)' if has_graph else 'None (use AST grep/search)'}\n"
+        f"• Mandatory Directives:\n"
+        f"  1. Start of task: Check AgentMemory (memory_recall / memory_smart_search) for past architecture decisions.\n"
+        f"  2. Fast-evolving APIs (Next.js/Supabase/Tailwind): Query Context7 before writing code.\n"
+        f"  3. Token Efficiency: Pipe noisy build/test logs through agy-cleanlog, diffs through agy-commit (Qwen), and tricky concurrency audits through agy-audit (DeepSeek-R1)."
+    )
+
+    output = {
+        "injectSteps": [
+            {
+                "ephemeralMessage": guidance
+            }
+        ]
+    }
+
+    print(json.dumps(output))
+
+if __name__ == "__main__":
+    main()

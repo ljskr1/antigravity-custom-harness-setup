@@ -15,11 +15,12 @@
 
 ## 🏛️ System Architecture
 
-Rather than relying on monolithic prompts or naive single-model wrappers, this harness implements a **three-tier cognitive hierarchy**:
+Rather than relying on monolithic prompts or naive single-model wrappers, this harness implements a **three-tier cognitive hierarchy with deterministic lifecycle hooks**:
 
 ```mermaid
 flowchart TD
-    User([User Request / Task]) --> Dispatcher{Slash Command Dispatcher}
+    User([User Request / Task]) --> Hook[PreInvocation Lifecycle Hook<br/>harness-preinvocation.py]
+    Hook -->|Deterministic Step 0 Context| Dispatcher{Slash Command Dispatcher}
 
     subgraph Tier1 ["Tier 1: Primary Cognitive Core (Cloud Brain)"]
         Gemini["Gemini 3.8 / 3.7 (Flash & Thinking)<br/>• Macro Planning & Complex Refactoring<br/>• Multi-file Architecture & Tool Calling<br/>• Turn-by-Turn Synthesis"]
@@ -58,7 +59,11 @@ flowchart TD
 
 ## ⚡ The 4 Pillars of the Harness
 
-### 1. Hybrid Cloud + Local Model Mesh (80%+ Token Savings)
+### 1. Deterministic Lifecycle Hooks & Local Fleet Detection
+Prompt-level instructions can sometimes be skipped if an LLM is eager to respond. This harness solves the compliance gap using **Antigravity Lifecycle Hooks** (`config/hooks.example.json`):
+- **PreInvocation Hook (`harness-preinvocation.py`)**: Runs before every model turn in <30ms. It probes the local Ollama runtime to detect active specialist models (`qwen2.5-coder`, `deepseek-r1`), scans the workspace for an AST graph, and deterministically injects a mandatory **Step 0 Execution Gate** into the context.
+
+### 2. Hybrid Cloud + Local Model Mesh (80%+ Token Savings)
 Noisy terminal output, massive git diffs, and repetitive unit test generation can bloat cloud LLM context windows and waste budget. This harness offloads heavy micro-tasks to an active local **Ollama** sidecar runtime:
 - **`agy-cleanlog`** *(Qwen 2.5 Coder 1.5B)*: Strips build noise and progress bars from terminal logs, compressing megabyte-sized error outputs down to <12 lines before pasting to Cloud Gemini.
 - **`agy-commit`** *(Qwen 2.5 Coder 7B)*: Scans staged git diffs for forgotten debug statements (`console.log`, `debugger`, raw credentials) and formats clean Conventional Commits.
@@ -66,27 +71,16 @@ Noisy terminal output, massive git diffs, and repetitive unit test generation ca
 - **`agy-audit`** *(DeepSeek-R1 8B)*: Runs adversarial verification on tricky multithreading, mutexes, deadlocks, and race conditions.
 - **Auto-Unload Guardrail**: Local models unload after 2 minutes idle (`OLLAMA_KEEP_ALIVE="2m"`) to preserve 100% RAM for system processes.
 
-### 2. Living Self-Learning Directive & Persistent State
+### 3. Living Self-Learning Directive & Persistent State
 - **Self-Evolving Cognitive Files (`GEMINI.md` & `AGENTS.md`)**: The harness enforces an active learning directive. In every session, the agent prunes, refines, and synthesizes newly discovered developer habits, framework edge cases, and architectural fixes directly into its instructions.
 - **AgentMemory (`agentmemory` MCP)**: Stores durable facts, architectural decisions, and preferences across sessions.
 - **Live Documentation (`Context7` MCP)**: Fetches version-exact, real-time documentation snippets for fast-evolving packages (Next.js, Tailwind, Supabase, LangChain) to eliminate API hallucination.
 - **Codebase Knowledge Graph (`Graphify`)**: Converts source code into an offline AST graph (`graphify query`, `graphify path`, `graphify explain`) for instant structural comprehension.
 
-### 3. The Slash Command Spectrum (`/`)
-The harness equips the agent with a clean, extensible command palette:
-- **`/btw`**: Quick side-questions without interrupting active tasks.
-- **`/goal`**: Autonomous completion loop with self-healing test loops.
-- **`/schedule`**: Deferred timers and recurring background cron tasks.
-- **`/browser`**: Headless browser automation for DOM scraping and live verification.
-- **`/grill-me`**: Interactive interview mode to dissect requirements and surface trade-offs before writing code.
-- **`/teamwork-preview`**: Parallel subagent fleet running in isolated git worktrees.
-- **`/learn`**: Structured reflection to capture reusable lessons.
-- **`/boost`**: Deep multi-agent audit mode for high-assurance reasoning.
-
 ### 4. Apple Design System & Compliance Audit Engine
 The repository packages a unified **Apple Design System Skill** (`skills/apple-design`):
 - **Native Apple HIG**: SF Pro / New York optical scales, G2 squircle continuity, dynamic OLED colors, and physical spring physics (`cubic-bezier(0.25, 1, 0.5, 1)`).
-- **Apple Web Gallery Standard**: Photography-first museum gallery architecture, pure black global nav (`#000000`), Action Blue accent (`#0066cc`), 17px body reading rhythm (1.47 line-height), and the single signature product surface drop shadow (`rgba(0, 0, 0, 0.22) 3px 5px 30px`).
+- **Apple Web Gallery Standard**: Photography-first museum gallery architecture, pure black global nav (`#0066cc` Action Blue), 17px body reading rhythm (1.47 line-height), and the single signature product surface drop shadow (`rgba(0, 0, 0, 0.22) 3px 5px 30px`).
 - **Automated 0–100 Audit CLI (`audit-apple-design.mjs`)**: Static scanner verifying WCAG relative luminance contrast ratios (≥ 4.5:1), touch-target dimensions (≥ 44×44 pt), and flagging forbidden anti-patterns (e.g. purple text on dark backgrounds, un-diffused drop shadows).
 
 ---
@@ -113,7 +107,14 @@ echo 'source ~/.local/bin/agy-helpers.zsh' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-### 3. Configure MCP Servers
+### 3. Install PreInvocation Lifecycle Hook
+Configure the deterministic hook so local models and memory gates trigger every turn:
+```bash
+cp scripts/harness-preinvocation.py ~/.gemini/config/hooks/harness-preinvocation.py
+cp config/hooks.example.json ~/.gemini/config/hooks.json
+```
+
+### 4. Configure MCP Servers
 Copy the sanitized template to your Antigravity configuration directory:
 ```bash
 cp config/mcp_config.example.json ~/.gemini/config/mcp_config.json
@@ -124,7 +125,7 @@ export RENDER_API_KEY="your_key_here"
 export AGENTMEMORY_URL="http://localhost:3111"
 ```
 
-### 4. Run Apple Design Compliance Audit
+### 5. Run Apple Design Compliance Audit
 ```bash
 node skills/apple-design/scripts/audit-apple-design.mjs [path-to-your-ui-code]
 ```

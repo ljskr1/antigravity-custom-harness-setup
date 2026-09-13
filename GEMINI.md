@@ -1,3 +1,13 @@
+<!-- harness_gate:start -->
+## Mandatory Step 0 Execution Gate
+
+Before outputting code or executing modifying commands:
+1. **Memory Check**: At the START of a task, call `memory_recall` or `memory_smart_search` via `agentmemory` to load past decisions, preferences, and fixes. Do not ask the user to repeat past context.
+2. **Framework Accuracy**: When interacting with modern external packages (Next.js, Supabase, Tailwind, Pydantic, etc.), verify exact signatures using `context7` before guessing.
+3. **Architecture Navigation**: If `graphify-out/graph.json` exists in the project root, query the graph (`graphify query`) before reading dozens of files.
+4. **Local LLM Offloading**: Route noisy logs through `agy-cleanlog` (Qwen 1.5B), diff reviews through `agy-commit` (Qwen 7B), and multithreading/concurrency audits through `agy-audit` (DeepSeek-R1).
+<!-- harness_gate:end -->
+
 <!-- agentmemory:start -->
 ## Agent Memory (agentmemory)
 
@@ -70,7 +80,7 @@ You have the authority and duty to continuously self-improve, optimize your tool
    - Keep skills modular, progressive-disclosure compliant, and documented with clear execution steps.
 
 3. **Dynamic Rule Self-Evolution (`GEMINI.md` & `AGENTS.md`)**:
-   - `GEMINI.md` and `AGENTS.md` are living, self-learning cognitive documents that MUST be updated and refined every session whenever:
+   - `~/.gemini/GEMINI.md` and `~/.gemini/AGENTS.md` are living, self-learning cognitive documents that MUST be updated and refined every session whenever:
      a. A user preference, workflow habit, or operational directive is communicated.
      b. A non-obvious engineering pattern, framework gotcha, tool failure, or fix is discovered.
      c. Existing rules become stale, redundant, or can be synthesized for better token efficiency and precision.

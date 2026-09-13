@@ -45,3 +45,7 @@ Thumbs.db
 graphify-out/
 .system_generated/
 *.log
+
+# Local drafts
+*linkedin*
+LINKEDIN_POST.md

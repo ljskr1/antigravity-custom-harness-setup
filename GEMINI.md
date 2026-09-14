@@ -5,8 +5,21 @@ Before outputting code or executing modifying commands:
 1. **Memory Check**: At the START of a task, call `memory_recall` or `memory_smart_search` via `agentmemory` to load past decisions, preferences, and fixes. Do not ask the user to repeat past context.
 2. **Framework Accuracy**: When interacting with modern external packages (Next.js, Supabase, Tailwind, Pydantic, etc.), verify exact signatures using `context7` before guessing.
 3. **Architecture Navigation**: If `graphify-out/graph.json` exists in the project root, query the graph (`graphify query`) before reading dozens of files.
-4. **Local LLM Offloading**: Route noisy logs through `agy-cleanlog` (Qwen 1.5B), diff reviews through `agy-commit` (Qwen 7B), and multithreading/concurrency audits through `agy-audit` (DeepSeek-R1).
+4. **Local & Zen Worker Offloading**: Route noisy logs through `agy-cleanlog` (Qwen 1.5B), diff reviews through `agy-commit` (Qwen 7B), and heavy boilerplate/code generation to `agy-zen` (MiMo v2.5).
 <!-- harness_gate:end -->
+
+<!-- zen_worker:start -->
+## Free Worker Delegation Engine (Zen Router on localhost:3010)
+
+You have access to an active local Zen Router proxy running on `http://localhost:3010` providing free models: `mimo-v2.5-free` (200k context), `muse-spark-1.3-contributor-free` (1M context), and `deepseek-v4-flash-free`.
+
+**MASTER-WORKER PROTOCOL TO PRESERVE GEMINI'S CONTEXT WINDOW**:
+1. **Master Architect (Gemini)**: You handle high-level system architecture, planning, interface design, and verification.
+2. **Free Worker Delegation (`agy-zen`)**: When a task involves writing large new files, massive boilerplate, or extensive mock fixtures, DO NOT burn Gemini's context window generating hundreds of lines of code.
+   - Run: `agy-zen --model mimo-v2.5-free --prompt "<detailed requirements>" --out <path/to/target/file>` via `run_command`.
+   - The worker generates the complete code file directly onto disk, saving thousands of cloud tokens.
+3. **Verification**: Gemini verifies the generated code with tests (`npm test`, `pytest`) or surgical line reviews, maintaining a light, ultra-efficient context window throughout the session.
+<!-- zen_worker:end -->
 
 <!-- agentmemory:start -->
 ## Agent Memory (agentmemory)
@@ -40,6 +53,7 @@ You have persistent long-term memory via the `agentmemory` MCP server. Tools: `m
 
 - **CLI First**: Favor native shell commands (`gh`, `git`, `ast-grep`, `npm`) via `run_command` over heavy, schema-bloated MCP servers to conserve context tokens.
 - **Surgical Reading**: Use targeted line ranges and graph subqueries rather than dumping large files into context.
+- **HTML5 Canvas 2D Limitations**: `ctx.fillStyle` cannot parse CSS gradient strings (`linear-gradient(...)`). When creating color presets destined for `<canvas>` fills, always use valid solid hex/rgb strings or create `CanvasGradient` objects programmatically.
 <!-- token_efficiency:end -->
 
 <!-- local_sidecar:start -->

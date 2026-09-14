@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+"""
+Antigravity Zen Worker CLI
+Delegates heavy generation/refactoring to free Zen Router models on localhost:3010.
+"""
+import argparse
+import json
+import os
+import sys
+import urllib.request
+import urllib.error
+
+ZEN_URL = os.environ.get("ZEN_ROUTER_URL", "http://localhost:3010/v1/chat/completions")
+DEFAULT_MODEL = "mimo-v2.5-free"
+
+def main():
+    parser = argparse.ArgumentParser(description="Antigravity Zen Router Worker Client")
+    parser.add_argument("--model", "-m", default=DEFAULT_MODEL, help=f"Zen model to use (default: {DEFAULT_MODEL})")
+    parser.add_argument("--system", "-s", default="You are an expert software engineer. Output production-ready, complete code with zero conversational fluff.", help="System prompt")
+    parser.add_argument("--prompt", "-p", help="Task prompt for the worker")
+    parser.add_argument("--file", "-f", help="Input file to process / provide as context")
+    parser.add_argument("--stdin", action="store_true", help="Read input from stdin")
+    parser.add_argument("--out", "-o", help="Directly write output to this file (bypasses stdout, saves context)")
+    parser.add_argument("--raw", action="store_true", help="Output raw JSON response from Zen Router")
+    
+    args = parser.parse_args()
+
+    piped_content = ""
+    if args.stdin:
+        piped_content = sys.stdin.read()
+
+    file_content = ""
+    if args.file and os.path.exists(args.file):
+        with open(args.file, "r", encoding="utf-8") as f:
+            file_content = f.read()
+
+    user_message = ""
+    if file_content:
+        user_message += f"### Context File ({args.file}):\n```\n{file_content}\n```\n\n"
+    if piped_content:
+        user_message += f"### Input Data:\n```\n{piped_content}\n```\n\n"
+    if args.prompt:
+        user_message += f"### Instruction:\n{args.prompt}"
+
+    if not user_message.strip():
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    payload = {
+        "model": args.model,
+        "messages": [
+            {"role": "system", "content": args.system},
+            {"role": "user", "content": user_message}
+        ],
+        "stream": False
+    }
+
+    req = urllib.request.Request(
+        ZEN_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": "curl/8.7.1",
+            "Accept": "application/json"
+        }
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.URLError as e:
+        print(f"Error: Zen Router proxy unreachable at {ZEN_URL}: {e}", file=sys.stderr)
+        sys.exit(2)
+    except Exception as e:
+        print(f"Error communicating with Zen Router: {e}", file=sys.stderr)
+        sys.exit(3)
+
+    if args.raw:
+        print(json.dumps(data, indent=2))
+        return
+
+    content = ""
+    choices = data.get("choices", [])
+    if choices:
+        msg = choices[0].get("message", {})
+        content = msg.get("content", "")
+
+    clean_content = content
+    if args.out:
+        stripped = clean_content.strip()
+        if stripped.startswith("```") and stripped.endswith("```"):
+            lines = stripped.splitlines()
+            if len(lines) >= 2:
+                clean_content = "\n".join(lines[1:-1]) + "\n"
+
+        out_dir = os.path.dirname(os.path.abspath(args.out))
+        if out_dir:
+            os.makedirs(out_dir, exist_ok=True)
+            
+        with open(args.out, "w", encoding="utf-8") as f:
+            f.write(clean_content)
+        print(f"Successfully generated {args.out} via Zen Router ({args.model}) [{len(clean_content)} chars]")
+    else:
+        print(clean_content)
+
+if __name__ == "__main__":
+    main()

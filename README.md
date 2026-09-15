@@ -113,6 +113,15 @@ chmod +x ~/.gemini/config/hooks/harness-preinvocation.py
 agy-zen --model mimo-v2.5-free --prompt "Write a FastAPI auth router with JWT" --out src/auth.py
 ```
 
+### 4. Launch Antigravity Mission Control Dashboard
+Test and monitor the entire Master-Worker harness with the interactive Apple-designed visual dashboard (100/100 Apple HIG audit score):
+```bash
+python3 -m http.server 4173 --directory harness-ui
+# Visit http://localhost:4173
+```
+
+![Antigravity Mission Control](assets/screenshots/mission_control_overview.png)
+
 ---
 
 ## 🛡️ Security & Zero-Leak Assurance

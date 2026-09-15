@@ -94,7 +94,7 @@ def validate_syntax(filepath: str) -> tuple[bool, str]:
             return True, f"Python check skipped ({e})"
     elif ext in ["ts", "tsx", "js", "jsx"]:
         try:
-            bun_path = "/Users/lijah/.bun/bin/bun"
+            bun_path = os.path.expanduser("~/.bun/bin/bun")
             if not os.path.exists(bun_path):
                 bun_path = "bun"
             res = subprocess.run([bun_path, "build", "--no-bundle", filepath], capture_output=True, text=True)

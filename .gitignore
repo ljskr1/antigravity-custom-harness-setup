@@ -45,7 +45,12 @@ Thumbs.db
 graphify-out/
 .system_generated/
 *.log
+*.bak
+.cache/
+dist/
+build/
 
 # Local drafts
 *linkedin*
 LINKEDIN_POST.md
+

@@ -6,7 +6,7 @@
 [![Local Fleet](https://img.shields.io/badge/Local%20Fleet-Ollama%20(Qwen%20%2B%20DeepSeek)-orange.svg)](https://ollama.ai)
 [![Design Engine](https://img.shields.io/badge/Design%20System-Apple%20HIG%20%26%20Web%20Gallery-black.svg)](skills/apple-design/SKILL.md)
 
-> A production-grade **Autonomous Multi-Agent Runtime Harness** built on **Google Antigravity**. Implements a Master-Worker protocol: Cloud Gemini acts as the Master Architect, while a local Zen Router proxy (`mimo-v2.5-free`, `muse-spark-1.3`, `deepseek-v4-flash`) and Ollama fleet handle heavy code generation, diff audits, and log compression with **zero cloud token waste**.
+> A production-grade **Autonomous Multi-Agent Runtime Harness** built on **Google Antigravity**. Implements a Master-Worker protocol: Cloud Gemini acts as the Master Architect, while a local Zen Router proxy (`mimo-v2.5-free`, `muse-spark-1.3`, `nemotron-3.5-lightning`) and Ollama fleet handle heavy code generation, diff audits, and log compression with **zero cloud token waste**.
 
 ---
 
@@ -120,7 +120,11 @@ python3 -m http.server 4173 --directory harness-ui
 # Visit http://localhost:4173
 ```
 
-![Antigravity Mission Control](assets/screenshots/mission_control_overview.png)
+#### Full Dashboard Overview
+![Antigravity Mission Control Overview](assets/screenshots/mission_control_overview.png)
+
+#### Interactive Verification Workbench (Executed Delegation State)
+![Antigravity Mission Control Executed State](assets/screenshots/mission_control_executed.png)
 
 ---
 

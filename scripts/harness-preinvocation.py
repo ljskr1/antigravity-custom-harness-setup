@@ -32,13 +32,19 @@ def probe_zen():
 
     try:
         req = urllib.request.Request("http://localhost:3010/v1/models", headers={"User-Agent": "curl/8.7.1"})
-        with urllib.request.urlopen(req, timeout=1.0) as response:
+        with urllib.request.urlopen(req, timeout=2.5) as response:
             if response.status == 200:
                 data = json.loads(response.read().decode())
-                models = [m.get("id", "") for m in data.get("data", []) if m.get("id")]
+                raw_models = [m.get("id", "") for m in data.get("data", []) if m.get("id")]
+                # Filter out known unavailable models and prioritize reliable free workers
+                preferred = ["mimo-v2.5-free", "muse-spark-1.3-contributor-free", "nemotron-3.5-lightning-free", "big-pickle"]
+                ordered = [m for m in preferred if m in raw_models]
+                for m in raw_models:
+                    if m not in ordered and m != "deepseek-v4-flash-free":
+                        ordered.append(m)
                 with open(CACHE_FILE, "w") as f:
-                    json.dump({"timestamp": now, "models": models}, f)
-                return models
+                    json.dump({"timestamp": now, "models": ordered}, f)
+                return ordered
     except Exception:
         pass
     return None

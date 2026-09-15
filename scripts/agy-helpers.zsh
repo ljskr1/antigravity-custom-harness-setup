@@ -79,14 +79,8 @@ agy-commit() {
   fi
 
   echo "Analyzing diff with local Qwen 7B Coder..." >&2
-  ollama run qwen2.5-coder:7b \
-    "Analyze this git diff. 
-1. Check for any forgotten debug prints (e.g. console.log, print, debugger) or secrets.
-2. Output a clean Conventional Commit message (type(scope): description).
-Output ONLY the audit notes (if any) followed by the commit message.
-
-Diff:
-$diff"
+  echo "$diff" | ollama run qwen2.5-coder:7b \
+    "Analyze this git diff. Check for forgotten debug prints or secrets, and output a clean Conventional Commit message."
 }
 
 # 3. Local Unit Test Scaffolder
@@ -103,11 +97,8 @@ agy-tests() {
   fi
 
   echo "Scaffolding unit tests for $file using Qwen 7B Coder..." >&2
-  ollama run qwen2.5-coder:7b \
-    "Write comprehensive unit tests with edge-case coverage for the following code. Use the standard test framework for this language. Output ONLY valid test code.
-
-Code:
-$(cat "$file")"
+  cat "$file" | ollama run qwen2.5-coder:7b \
+    "Write comprehensive unit tests with edge-case coverage for this code. Output ONLY valid test code."
 }
 
 # 4. Deep Algorithmic & Concurrency Logic Audit (DeepSeek-R1)
@@ -124,10 +115,8 @@ agy-audit() {
   fi
 
   echo "Running deep logic & race-condition audit with DeepSeek-R1..." >&2
-  ollama run deepseek-r1:8b \
-    "Perform a deep step-by-step logic, race-condition, deadlock, and edge-case verification of this code. Explain your reasoning:
-
-$(cat "$file")"
+  cat "$file" | ollama run deepseek-r1:8b \
+    "Perform a deep step-by-step logic, race-condition, deadlock, and edge-case verification of this code. Output a concise 5-bullet audit report of risks and fixes."
 }
 
 # 5. Offline Zero-Cost Graphify Extraction

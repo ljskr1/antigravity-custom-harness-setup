@@ -1,17 +1,169 @@
 #!/usr/bin/env python3
 """
 Antigravity Zen Worker CLI
-Delegates heavy generation/refactoring to free Zen Router models on localhost:3010.
+Delegates heavy generation/refactoring to free Zen Router models on localhost:3010,
+protecting Cloud Gemini's context window from token exhaustion.
 """
 import argparse
 import json
 import os
+import re
+import subprocess
 import sys
 import urllib.request
 import urllib.error
 
 ZEN_URL = os.environ.get("ZEN_ROUTER_URL", "http://localhost:3010/v1/chat/completions")
 DEFAULT_MODEL = "mimo-v2.5-free"
+FALLBACK_MODEL = "muse-spark-1.3-contributor-free"
+
+LANGUAGE_EXTENSIONS = {
+    "py": ["python", "py"],
+    "ts": ["typescript", "ts"],
+    "tsx": ["typescript", "tsx", "ts"],
+    "js": ["javascript", "js"],
+    "jsx": ["javascript", "jsx", "js"],
+    "go": ["go"],
+    "rs": ["rust", "rs"],
+    "sql": ["sql"],
+    "json": ["json"],
+    "html": ["html"],
+    "css": ["css"],
+    "sh": ["bash", "sh", "zsh"],
+    "zsh": ["zsh", "bash", "sh"],
+    "yaml": ["yaml", "yml"],
+    "yml": ["yaml", "yml"],
+}
+
+def extract_code(content: str, target_file: str = "") -> str:
+    """
+    Robustly extracts code from model response.
+    - If target_file is provided, identifies matching language code blocks.
+    - Joins multiple code blocks belonging to the target file.
+    - Filters out unrelated blocks (e.g. bash commands when writing a .ts file).
+    - Strips markdown formatting, chat preamble, and conversational sign-offs.
+    """
+    ext = ""
+    if target_file:
+        ext = os.path.splitext(target_file)[1].lstrip(".").lower()
+    
+    target_tags = LANGUAGE_EXTENSIONS.get(ext, [ext] if ext else [])
+    
+    block_pattern = r"```([a-zA-Z0-9_\-\+]*)\s*\n(.*?)```"
+    blocks = re.findall(block_pattern, content, re.DOTALL)
+    
+    if blocks:
+        if target_tags:
+            matching = [code.strip() for lang, code in blocks if lang.lower() in target_tags]
+            if not matching:
+                untagged = [code.strip() for lang, code in blocks if not lang.strip()]
+                if untagged:
+                    matching = untagged
+            
+            if matching:
+                return "\n\n".join(matching).strip() + "\n"
+        
+        non_shell = [code.strip() for lang, code in blocks if lang.lower() not in ["bash", "sh", "shell", "zsh", "terminal"]]
+        if non_shell and ext not in ["sh", "zsh", "bash"]:
+            return "\n\n".join(non_shell).strip() + "\n"
+            
+        return "\n\n".join(code.strip() for _, code in blocks).strip() + "\n"
+
+    lines = content.strip().splitlines()
+    cleaned = []
+    started = False
+    for line in lines:
+        if not started:
+            if re.match(r"^(here is|below is|sure|okay|i have|let me|note:|# )", line.strip(), re.IGNORECASE):
+                continue
+            started = True
+        cleaned.append(line)
+    
+    return "\n".join(cleaned).strip() + "\n"
+
+def validate_syntax(filepath: str) -> tuple[bool, str]:
+    """Runs lightweight local syntax validation if available."""
+    ext = os.path.splitext(filepath)[1].lstrip(".").lower()
+    if ext == "py":
+        try:
+            res = subprocess.run(["python3", "-m", "py_compile", filepath], capture_output=True, text=True)
+            if res.returncode == 0:
+                return True, "Python AST valid"
+            return False, res.stderr.strip()
+        except Exception as e:
+            return True, f"Python check skipped ({e})"
+    elif ext in ["ts", "tsx", "js", "jsx"]:
+        try:
+            bun_path = "/Users/lijah/.bun/bin/bun"
+            if not os.path.exists(bun_path):
+                bun_path = "bun"
+            res = subprocess.run([bun_path, "build", "--no-bundle", filepath], capture_output=True, text=True)
+            if res.returncode == 0:
+                return True, "Bun JS/TS valid"
+            return False, res.stderr.strip() or res.stdout.strip()
+        except Exception:
+            return True, "JS/TS validator skipped"
+    elif ext == "json":
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                json.load(f)
+            return True, "JSON valid"
+        except Exception as e:
+            return False, str(e)
+    return True, "No specific validator"
+
+def stream_zen_completion(model: str, system: str, user_message: str, timeout: int = 90) -> str:
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_message}
+        ],
+        "stream": True
+    }
+
+    req = urllib.request.Request(
+        ZEN_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": "curl/8.7.1",
+            "Accept": "text/event-stream"
+        }
+    )
+
+    collected_content = []
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        for line in resp:
+            line_str = line.decode("utf-8", errors="replace").strip()
+            if not line_str.startswith("data:"):
+                continue
+            data_str = line_str[5:].strip()
+            if data_str == "[DONE]":
+                break
+            try:
+                data = json.loads(data_str)
+                choices = data.get("choices", [])
+                if choices:
+                    delta = choices[0].get("delta", {})
+                    token = delta.get("content", "")
+                    if token:
+                        collected_content.append(token)
+            except Exception:
+                continue
+
+    return "".join(collected_content)
+
+def call_zen_with_fallback(model: str, system: str, user_message: str) -> tuple[str, str]:
+    try:
+        content = stream_zen_completion(model, system, user_message)
+        if content.strip():
+            return content, model
+    except Exception as e:
+        print(f"Warning: Primary model {model} failed: {e}. Attempting fallback to {FALLBACK_MODEL}...", file=sys.stderr)
+
+    content = stream_zen_completion(FALLBACK_MODEL, system, user_message)
+    return content, FALLBACK_MODEL
 
 def main():
     parser = argparse.ArgumentParser(description="Antigravity Zen Router Worker Client")
@@ -21,7 +173,7 @@ def main():
     parser.add_argument("--file", "-f", help="Input file to process / provide as context")
     parser.add_argument("--stdin", action="store_true", help="Read input from stdin")
     parser.add_argument("--out", "-o", help="Directly write output to this file (bypasses stdout, saves context)")
-    parser.add_argument("--raw", action="store_true", help="Output raw JSON response from Zen Router")
+    parser.add_argument("--no-check", action="store_true", help="Skip syntax validation")
     
     args = parser.parse_args()
 
@@ -46,62 +198,33 @@ def main():
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    payload = {
-        "model": args.model,
-        "messages": [
-            {"role": "system", "content": args.system},
-            {"role": "user", "content": user_message}
-        ],
-        "stream": False
-    }
-
-    req = urllib.request.Request(
-        ZEN_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "User-Agent": "curl/8.7.1",
-            "Accept": "application/json"
-        }
-    )
-
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.URLError as e:
-        print(f"Error: Zen Router proxy unreachable at {ZEN_URL}: {e}", file=sys.stderr)
-        sys.exit(2)
+        content, used_model = call_zen_with_fallback(args.model, args.system, user_message)
     except Exception as e:
         print(f"Error communicating with Zen Router: {e}", file=sys.stderr)
         sys.exit(3)
 
-    if args.raw:
-        print(json.dumps(data, indent=2))
-        return
-
-    content = ""
-    choices = data.get("choices", [])
-    if choices:
-        msg = choices[0].get("message", {})
-        content = msg.get("content", "")
-
-    clean_content = content
     if args.out:
-        stripped = clean_content.strip()
-        if stripped.startswith("```") and stripped.endswith("```"):
-            lines = stripped.splitlines()
-            if len(lines) >= 2:
-                clean_content = "\n".join(lines[1:-1]) + "\n"
-
+        clean_code = extract_code(content, args.out)
         out_dir = os.path.dirname(os.path.abspath(args.out))
         if out_dir:
             os.makedirs(out_dir, exist_ok=True)
             
         with open(args.out, "w", encoding="utf-8") as f:
-            f.write(clean_content)
-        print(f"Successfully generated {args.out} via Zen Router ({args.model}) [{len(clean_content)} chars]")
+            f.write(clean_code)
+            
+        status_msg = f"Successfully generated {args.out} via Zen Router ({used_model}) [{len(clean_code)} chars]"
+        
+        if not args.no_check:
+            valid, check_msg = validate_syntax(args.out)
+            if valid:
+                status_msg += f" [Syntax: {check_msg}]"
+            else:
+                status_msg += f" [Syntax Warning: {check_msg}]"
+                
+        print(status_msg)
     else:
-        print(clean_content)
+        print(content)
 
 if __name__ == "__main__":
     main()

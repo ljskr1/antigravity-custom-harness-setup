@@ -74,3 +74,8 @@ Whenever orchestrating or invoking subagents via `invoke_subagent`:
    - **Deterministic Validation Gate**: Every generated file must be compiled and validated deterministically (`bun build --no-bundle`, `python3 -m py_compile`, or unit tests) before being accepted.
    - **The 2-Strike Escalation Gate**: If a free worker fails verification twice, Cloud Gemini 3.8 Flash takes over immediately and writes/edits the file directly. No degraded code ever ships.
 
+5. **Zero-Delay Dispatch on `/teamwork-preview` & `/boost` (No Single-Agent Hijacking)**:
+   - When the user issues `/teamwork-preview` or `/boost` with an objective, task, or audit request, **NEVER hijack the task into single-agent sequential execution**.
+   - Do NOT stall in multi-turn questionnaires, and do NOT perform whole-codebase audits alone as a single agent.
+   - Immediately decompose the task and dispatch the subagent fleet via `invoke_subagent` (workers defaulting to `Model: "flash"` or `Model: "flash_lite"` with `agy-zen` directives). Subagents work in parallel and report back concise contracts.
+

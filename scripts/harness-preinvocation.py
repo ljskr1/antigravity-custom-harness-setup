@@ -79,7 +79,8 @@ def main():
         f"• Master-Worker Protocol:\n"
         f"  1. Master Architect (Cloud Gemini): Handles macro planning, architecture, and verification.\n"
         f"  2. Free Code Generation: Delegate heavy file scaffolding to 'agy-zen --prompt \"...\" --out <file>' to protect context.\n"
-        f"  3. Token Efficiency: Pipe noisy logs through agy-cleanlog and diffs through agy-commit."
+        f"  3. Token Efficiency: Pipe noisy logs through agy-cleanlog and diffs through agy-commit.\n"
+        f"  4. Subagents (/teamwork-preview & /boost): NEVER let subagents dump raw code. Inject 'agy-zen' instructions into subagent prompts and use Model: 'flash' for workers to prevent 429 RESOURCE_EXHAUSTED lockouts."
     )
 
     output = {

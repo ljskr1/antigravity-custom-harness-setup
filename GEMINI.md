@@ -35,6 +35,12 @@ You have access to an active local Zen Router proxy running on `http://localhost
 - If verification fails or exposes a logical contradiction:
   - **Strike 1**: Issue one surgical correction prompt to `agy-zen` with the compiler/test error.
   - **Strike 2**: If the worker fails verification a second time, **Gemini takes over immediately** and writes/edits the file directly. Never enter infinite retry loops with free workers.
+
+### Multi-Agent Subagent Delegation (`/teamwork-preview` & `/boost`)
+- **Prevention of 429 RESOURCE_EXHAUSTED**: Spawning multiple subagents concurrently with `Model: "inherit"` (Gemini Pro) while outputting large code blocks directly in conversation turns quickly exhausts user API quotas (3+ hour lockout).
+- **Mandatory Subagent Directive**:
+  1. Whenever invoking subagents (`invoke_subagent`), inject the `agy-zen` execution protocol into their prompt so workers write code directly to disk and verify syntax deterministically (`bun build --no-bundle`, `python3 -m py_compile`).
+  2. Model Tiering: Default worker, reviewer, and explorer subagents to `Model: "flash"` or `Model: "flash_lite"`. Reserve `Model: "inherit"` / `Model: "pro"` strictly for the top-level Master Architect or deep single-agent proofs.
 <!-- zen_worker:end -->
 
 <!-- agentmemory:start -->

@@ -69,3 +69,9 @@ Whenever orchestrating or invoking subagents via `invoke_subagent`:
 3. **Compact Handoff Contracts**:
    - Subagents must report back with concise status summaries (file created, AST validity status, tests passed) rather than pasting full multi-hundred-line code files into inter-agent messages.
 
+4. **The Quality Parity Guarantee (Matching Gemini 3.8 Standards)**:
+   - **Specification Density**: Workers never guess requirements. The orchestrator must inject explicit TypeScript/Python types, error invariants, and boundary checks into the worker prompt.
+   - **Deterministic Validation Gate**: Every generated file must be compiled and validated deterministically (`bun build --no-bundle`, `python3 -m py_compile`, or unit tests) before being accepted.
+   - **The 2-Strike Escalation Gate**: If a free worker fails verification twice, Cloud Gemini takes over immediately and writes/edits the file directly. No degraded code ever ships.
+   - **Model Escalation for Complex Proofs**: Reserve `Model: "pro"` strictly for single high-assurance mathematical proofs or delicate concurrency models; standard scaffolding and auditing remain on `Model: "flash"` + `agy-zen`.
+

@@ -41,6 +41,7 @@ You have access to an active local Zen Router proxy running on `http://localhost
 - **Mandatory Subagent Directive**:
   1. Whenever invoking subagents (`invoke_subagent`), inject the `agy-zen` execution protocol into their prompt so workers write code directly to disk and verify syntax deterministically (`bun build --no-bundle`, `python3 -m py_compile`).
   2. Model Tiering: Default worker, reviewer, and explorer subagents to `Model: "flash"` or `Model: "flash_lite"`. Reserve `Model: "inherit"` / `Model: "pro"` strictly for the top-level Master Architect or deep single-agent proofs.
+  3. Quality Parity Guarantee: Injects high specification density (explicit types, boundary checks) into worker prompts so output quality matches Gemini 3.8 standards. Enforces deterministic syntax checks (`bun`, `tsc`, `py_compile`) and triggers the 2-Strike Escalation Gate (Gemini takes over immediately if any worker fails twice).
 <!-- zen_worker:end -->
 
 <!-- agentmemory:start -->

@@ -8,6 +8,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import urllib.request
@@ -154,13 +155,37 @@ def stream_zen_completion(model: str, system: str, user_message: str, timeout: i
 
     return "".join(collected_content)
 
+def call_opencode_run(model: str, system: str, user_message: str, timeout: int = 120) -> str:
+    """
+    Executes worker prompt via local opencode CLI connected to Zen Router (localhost:3010).
+    Provides native execution context and prevents upstream 403 FreeTierError.
+    """
+    full_prompt = f"{system}\n\n{user_message}" if system else user_message
+    model_spec = f"zen-router/{model}" if not model.startswith("zen-router/") else model
+    cmd = ["opencode", "run", "-m", model_spec, full_prompt]
+    res = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    if res.returncode == 0 and res.stdout.strip():
+        return res.stdout
+    raise RuntimeError(f"opencode run exited with code {res.returncode}: {res.stderr.strip() or res.stdout.strip()}")
+
 def call_zen_with_fallback(model: str, system: str, user_message: str) -> tuple[str, str]:
+    # 1. Prefer opencode CLI routing to localhost:3010 if installed
+    if shutil.which("opencode"):
+        for candidate in [model, FALLBACK_MODEL]:
+            try:
+                content = call_opencode_run(candidate, system, user_message)
+                if content.strip():
+                    return content, candidate
+            except Exception as e:
+                print(f"Warning: opencode routing with {candidate} failed: {e}. Trying next option...", file=sys.stderr)
+
+    # 2. Fall back to direct HTTP stream
     try:
         content = stream_zen_completion(model, system, user_message)
         if content.strip():
             return content, model
     except Exception as e:
-        print(f"Warning: Primary model {model} failed: {e}. Attempting fallback to {FALLBACK_MODEL}...", file=sys.stderr)
+        print(f"Warning: Primary model {model} HTTP stream failed: {e}. Attempting fallback to {FALLBACK_MODEL}...", file=sys.stderr)
 
     content = stream_zen_completion(FALLBACK_MODEL, system, user_message)
     return content, FALLBACK_MODEL

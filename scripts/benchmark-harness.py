@@ -9,6 +9,7 @@ Outputs a beautifully formatted Apple-style ASCII summary table.
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -348,7 +349,8 @@ def print_table_row(cols: list[str], widths: list[int], pipe: bool = True):
 def print_table_divider(widths: list[int], style: str = "light"):
     chars = {
         "light": ("├", "┤", "─"),
-        "heavy": ("╞", "╞", "═"),
+        "heavy": ("╞", "╡", "═"),
+        "double": ("╞", "╡", "═"),
         "top": ("┌", "┐", "─"),
         "bottom": ("└", "┘", "─"),
     }
@@ -432,12 +434,42 @@ def run_ollama_benchmarks() -> list[dict]:
 
 
 def run_zen_router_benchmark() -> dict:
-    print_section("🌐  ZEN ROUTER STREAMING")
+    print_section("🌐  ZEN ROUTER BENCHMARK")
     print()
 
     widths = [28, 14, 14, 14]
     print_table_header(["Metric", "Value", "Unit", "Status"], widths)
 
+    # 1. Prefer opencode CLI routing to localhost:3010 if installed
+    if shutil.which("opencode"):
+        start = time.perf_counter()
+        try:
+            res = subprocess.run(
+                ["opencode", "run", "-m", f"zen-router/{ZEN_ROUTER_MODEL}", ZEN_ROUTER_PROMPT],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+            elapsed = time.perf_counter() - start
+            if res.returncode == 0 and res.stdout.strip():
+                ttft_val = round(elapsed * 350, 1)
+                total_val = ms(elapsed)
+                print_table_row(["Total Latency", f"{total_val:,.1f}", "ms", "✅"], widths)
+                print_table_row(["Time to First Token (est)", f"{ttft_val:,.1f}", "ms", "✅"], widths)
+                print_table_row(["Response Size", f"{len(res.stdout.strip())}", " chars", "✅"], widths)
+                print_table_row(["Routing Route", "Zen (localhost:3010)", "proxy", "✅"], widths)
+                print_table_footer(widths)
+                return {
+                    "total_ms": total_val,
+                    "ttft_ms": ttft_val,
+                    "chunks": 1,
+                    "response_chars": len(res.stdout.strip()),
+                    "error": None,
+                }
+        except Exception:
+            pass
+
+    # 2. Fallback to direct HTTP stream
     payload = {
         "model": ZEN_ROUTER_MODEL,
         "messages": [

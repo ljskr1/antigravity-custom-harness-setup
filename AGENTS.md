@@ -53,12 +53,14 @@ Whenever orchestrating or invoking subagents via `invoke_subagent`:
    Every prompt generated for a worker, reviewer, explorer, or fixer subagent **MUST** inject the local worker directive:
    ```text
    [MANDATORY MASTER-WORKER EXECUTION PROTOCOL]
-   DO NOT burn cloud tokens generating large code files in your conversation turns.
+   DO NOT burn cloud tokens generating large code files or running unbounded cloud read loops.
    You have access to the local Zen Router on port 3010 and the local Ollama fleet on port 11434:
+   - Code Analysis & Audits: Run `agy-zen --file <path> -p "..."` or `agy-audit <path>` via run_command to get full multi-file analysis in 1 zero-cost turn instead of 40 cloud view_file turns.
    - File Scaffolding: Run `agy-zen --model mimo-v2.5-free --prompt "..." --out <path>` via run_command.
    - Deterministic AST Check: Run `bun build --no-bundle <file>` or `python3 -m py_compile <file>`.
    - Noisy Test Logs: Pipe terminal output through `agy-cleanlog` (e.g. `npm test 2>&1 | agy-cleanlog`).
    - Git Diffs: Run `agy-commit` locally.
+   - Bounded Turns: Never run open-ended exploration loops in the cloud.
    ```
 
 2. **Subagent Model Tiering Hierarchy**:

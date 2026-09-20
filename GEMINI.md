@@ -43,6 +43,7 @@ You have access to an active local Zen Router proxy running on `http://localhost
   2. Model Tiering: Default worker, reviewer, and explorer subagents to `Model: "flash"` or `Model: "flash_lite"`, leveraging `agy-zen` for direct-to-disk scaffolding.
   3. Quality Parity Guarantee: Injects high specification density (explicit types, boundary checks) into worker prompts so output quality matches Gemini 3.8 Flash standards. Enforces deterministic syntax checks (`bun`, `tsc`, `py_compile`) and triggers the 2-Strike Escalation Gate (Gemini 3.8 Flash takes over immediately if any worker fails twice).
   4. Zero-Delay Dispatch: When `/teamwork-preview` or `/boost` is triggered with a task or request, immediately launch the subagent fleet via `invoke_subagent`. Never hijack the task into single-agent sequential execution or stall in multi-turn questionnaires.
+  5. Zen Router for Audits & Analysis: Never let subagents run open-ended 50+ turn loops of `view_file` in the cloud. Direct workers to run `agy-zen --file <path> -p "..."` or `agy-audit <path>` via `run_command` for single-turn zero-cost multi-file analysis.
 <!-- zen_worker:end -->
 
 <!-- agentmemory:start -->

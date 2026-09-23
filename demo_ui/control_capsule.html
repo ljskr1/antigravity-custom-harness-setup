@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Apple VisionOS Liquid Glass Dynamic Control Capsule</title>
+    <style>
+        :root {
+            --bg-color: #0d0f12;
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.65);
+            --text-tertiary: rgba(255, 255, 255, 0.45);
+            --glass-bg: rgba(30, 34, 45, 0.6);
+            --glass-card-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.14);
+            --glass-border-subtle: rgba(255, 255, 255, 0.08);
+            --accent: #0071e3;
+            --accent-hover: #0077ed;
+            --accent-glow: rgba(0, 113, 227, 0.35);
+            --pill-track: rgba(0, 0, 0, 0.32);
+            --card-shadow: 0 24px 48px rgba(0, 0, 0, 0.28), 0 4px 16px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            --item-bg: rgba(255, 255, 255, 0.04);
+            --status-success: #30d158;
+        }
+
+        body.light-mode {
+            --bg-color: #f2f3f7;
+            --text-primary: #1d1d1f;
+            --text-secondary: rgba(0, 0, 0, 0.65);
+            --text-tertiary: rgba(0, 0, 0, 0.45);
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-card-bg: rgba(0, 0, 0, 0.03);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --glass-border-subtle: rgba(0, 0, 0, 0.06);
+            --pill-track: rgba(0, 0, 0, 0.06);
+            --card-shadow: 0 24px 60px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            --item-bg: rgba(0, 0, 0, 0.03);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient background glow */
+        .ambient-orb {
+            position: fixed;
+            width: 480px;
+            height: 480px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 113, 227, 0.18) 0%, rgba(94, 92, 230, 0.08) 50%, transparent 70%);
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -30%);
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(40px);
+        }
+
+        /* Main Glass Capsule */
+        .glass-capsule {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 440px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(36px) saturate(180%);
+            -webkit-backdrop-filter: blur(36px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 36px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Header */
+        .capsule-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .header-title-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--status-success);
+            box-shadow: 0 0 10px var(--status-success);
+            animation: pulse-dot 2.5s infinite cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.85); }
+        }
+
+        .capsule-title {
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: -0.015em;
+        }
+
+        .badge-zero-cost {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 4px 9px;
+            border-radius: 12px;
+            background: rgba(48, 209, 88, 0.15);
+            color: var(--status-success);
+            border: 1px solid rgba(48, 209, 88, 0.25);
+        }
+
+        /* Segmented Mode Track */
+        .seg-track {
+            display: flex;
+            background: var(--pill-track);
+            padding: 4px;
+            border-radius: 22px;
+            gap: 4px;
+            border: 1px solid var(--glass-border-subtle);
+            margin-bottom: 22px;
+        }
+
+        .seg-btn {
+            flex: 1;
+            min-height: 44px;
+            min-width: 44px;
+            background: transparent;
+            border: none;
+            border-radius: 18px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+        }
+
+        .seg-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .seg-btn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 1px;
+        }
+
+        .seg-btn.active {
+            background: var(--glass-card-bg);
+            color: var(--text-primary);
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18), 0 0 0 1px var(--glass-border);
+        }
+
+        /* Telemetry Metric Grid */
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .metric-card {
+            background: var(--item-bg);
+            border: 1px solid var(--glass-border-subtle);
+            border-radius: 20px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-1px);
+            border-color: var(--glass-border);
+        }
+
+        .metric-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            letter-spacing: -0.01em;
+        }
+
+        .metric-value {
+            font-size: 21px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: var(--text-primary);
+            font-feature-settings: "tnum" 1;
+        }
+
+        .metric-subtext {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+        }
+
+        /* Action Buttons */
+        .action-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            flex: 1;
+            min-height: 48px;
+            padding: 0 16px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+            outline: none;
+            border: 1px solid transparent;
+        }
+
+        .action-btn:active {
+            transform: scale(0.97);
+        }
+
+        .action-btn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .action-btn-primary {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 6px 20px var(--accent-glow);
+        }
+
+        .action-btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .action-btn-glass {
+            background: var(--glass-card-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+        }
+
+        .action-btn-glass:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Theme Toggle Tool */
+        .theme-pill-btn {
+            position: relative;
+            z-index: 1;
+            margin-top: 20px;
+            min-height: 44px;
+            min-width: 44px;
+            padding: 10px 18px;
+            border-radius: 22px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .theme-pill-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+        }
+
+        .theme-pill-btn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* Live status toast notification */
+        .telemetry-status {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-align: center;
+            margin-top: 14px;
+            min-height: 16px;
+            transition: color 0.3s ease;
+        }
+
+        /* Mobile ergonomics */
+        @media (max-width: 480px) {
+            body {
+                padding: 16px 12px;
+            }
+            .glass-capsule {
+                padding: 20px 16px;
+                border-radius: 30px;
+            }
+            .metric-value {
+                font-size: 19px;
+            }
+            .seg-btn {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-orb" aria-hidden="true"></div>
+
+    <main class="glass-capsule" role="region" aria-label="Zen Router Telemetry Capsule">
+        <!-- Capsule Header -->
+        <header class="capsule-header">
+            <div class="header-title-group">
+                <span class="status-dot" aria-hidden="true"></span>
+                <h1 class="capsule-title">Zen Fleet Controller</h1>
+            </div>
+            <span class="badge-zero-cost">Zero Cloud Cost</span>
+        </header>
+
+        <!-- Segmented Tab Navigation -->
+        <div class="seg-track" role="tablist" aria-label="Controller Views">
+            <button class="seg-btn active" role="tab" id="tab-overview" aria-selected="true" aria-controls="view-panel" data-segment="Overview" onclick="switchSegment('Overview')">Overview</button>
+            <button class="seg-btn" role="tab" id="tab-workers" aria-selected="false" aria-controls="view-panel" data-segment="Workers" onclick="switchSegment('Workers')">Workers</button>
+            <button class="seg-btn" role="tab" id="tab-audits" aria-selected="false" aria-controls="view-panel" data-segment="Audits" onclick="switchSegment('Audits')">Audits</button>
+            <button class="seg-btn" role="tab" id="tab-stream" aria-selected="false" aria-controls="view-panel" data-segment="Stream" onclick="switchSegment('Stream')">Stream</button>
+        </div>
+
+        <!-- Telemetry Metrics Grid -->
+        <div class="telemetry-grid" id="view-panel" role="tabpanel" aria-labelledby="tab-overview">
+            <div class="metric-card">
+                <span class="metric-label">Tokens Saved</span>
+                <span class="metric-value" id="val-tokens">84,200</span>
+                <span class="metric-subtext">MiMo v2.5 offload</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">Worker Cost</span>
+                <span class="metric-value" id="val-cost">$0.00</span>
+                <span class="metric-subtext">100% Free tier</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">AST Gate</span>
+                <span class="metric-value" id="val-ast">8.8ms</span>
+                <span class="metric-subtext">Deterministic syntax</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">Quota Risk</span>
+                <span class="metric-value" id="val-quota">0%</span>
+                <span class="metric-subtext">Safe local proxy</span>
+            </div>
+        </div>
+
+        <!-- Action Row -->
+        <div class="action-stack">
+            <div class="btn-row">
+                <button class="action-btn action-btn-primary" id="btn-verify" onclick="runVerification()">
+                    <span id="txt-verify">Run Verification</span>
+                </button>
+                <button class="action-btn action-btn-glass" id="btn-flush" onclick="flushCache()">
+                    <span id="txt-flush">Flush Cache</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="telemetry-status" id="lbl-status" aria-live="polite">
+            Fleet connected • MiMo v2.5 / DeepSeek-R1 active
+        </div>
+    </main>
+
+    <!-- Theme Switcher -->
+    <button class="theme-pill-btn" onclick="toggleTheme()" aria-label="Toggle visual theme">
+        <span id="theme-icon" aria-hidden="true">☀️</span>
+        <span id="theme-label">Switch to Light Mode</span>
+    </button>
+
+    <script>
+        const segmentData = {
+            Overview: {
+                tokens: "84,200",
+                cost: "$0.00",
+                ast: "8.8ms",
+                quota: "0%",
+                subtext: "MiMo v2.5 offload",
+                status: "Fleet connected • MiMo v2.5 / DeepSeek-R1 active"
+            },
+            Workers: {
+                tokens: "128,450",
+                cost: "$0.00",
+                ast: "3 Active",
+                quota: "0%",
+                subtext: "mimo-v2.5 + muse-spark",
+                status: "Zen Router localhost:3010 operational"
+            },
+            Audits: {
+                tokens: "32,100",
+                cost: "$0.00",
+                ast: "100/100",
+                quota: "0%",
+                subtext: "Apple HIG + R1 verified",
+                status: "Static HIG score: 100/100 (Ship tier)"
+            },
+            Stream: {
+                tokens: "142 t/s",
+                cost: "$0.00",
+                ast: "24ms TTFT",
+                quota: "0%",
+                subtext: "Low latency streaming",
+                status: "Event stream stable • 0 dropped frames"
+            }
+        };
+
+        function switchSegment(segmentName) {
+            const tabs = document.querySelectorAll('.seg-btn');
+            tabs.forEach(tab => {
+                const isSelected = tab.getAttribute('data-segment') === segmentName;
+                tab.classList.toggle('active', isSelected);
+                tab.setAttribute('aria-selected', isSelected ? "true" : "false");
+            });
+
+            const data = segmentData[segmentName];
+            if (!data) return;
+
+            // Animate metric updates smoothly
+            const elTokens = document.getElementById('val-tokens');
+            const elCost = document.getElementById('val-cost');
+            const elAst = document.getElementById('val-ast');
+            const elQuota = document.getElementById('val-quota');
+            const elStatus = document.getElementById('lbl-status');
+
+            if (elTokens) elTokens.textContent = data.tokens;
+            if (elCost) elCost.textContent = data.cost;
+            if (elAst) elAst.textContent = data.ast;
+            if (elQuota) elQuota.textContent = data.quota;
+            if (elStatus) elStatus.textContent = data.status;
+        }
+
+        function runVerification() {
+            const btn = document.getElementById('btn-verify');
+            const txt = document.getElementById('txt-verify');
+            const status = document.getElementById('lbl-status');
+            
+            btn.style.opacity = '0.7';
+            txt.textContent = "Verifying AST & HIG...";
+            status.textContent = "Running Bun AST parse & DeepSeek-R1 audit...";
+
+            setTimeout(() => {
+                btn.style.opacity = '1';
+                txt.textContent = "Verified ✓";
+                status.textContent = "Verification Passed: 100/100 Apple HIG Score";
+                setTimeout(() => {
+                    txt.textContent = "Run Verification";
+                }, 2500);
+            }, 900);
+        }
+
+        function flushCache() {
+            const btn = document.getElementById('btn-flush');
+            const txt = document.getElementById('txt-flush');
+            const status = document.getElementById('lbl-status');
+            
+            btn.style.opacity = '0.7';
+            txt.textContent = "Flushing...";
+
+            setTimeout(() => {
+                btn.style.opacity = '1';
+                txt.textContent = "Cache Flushed ✓";
+                status.textContent = "Memory cache pruned. Ollama keepalive 2m idle intact.";
+                setTimeout(() => {
+                    txt.textContent = "Flush Cache";
+                }, 2500);
+            }, 600);
+        }
+
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-mode');
+            const icon = document.getElementById('theme-icon');
+            const label = document.getElementById('theme-label');
+            
+            if (isLight) {
+                icon.textContent = "🌙";
+                label.textContent = "Switch to Dark Mode";
+            } else {
+                icon.textContent = "☀️";
+                label.textContent = "Switch to Light Mode";
+            }
+        }
+    </script>
+</body>
+</html>

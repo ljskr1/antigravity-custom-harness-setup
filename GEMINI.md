@@ -36,14 +36,14 @@ You have access to an active local Zen Router proxy running on `http://localhost
   - **Strike 1**: Issue one surgical correction prompt to `agy-zen` with the compiler/test error.
   - **Strike 2**: If the worker fails verification a second time, **Gemini takes over immediately** and writes/edits the file directly. Never enter infinite retry loops with free workers.
 
-### Multi-Agent Subagent Delegation (`/teamwork-preview` & `/boost`)
-- **Prevention of 429 RESOURCE_EXHAUSTED**: Spawning multiple subagents concurrently while outputting large code blocks directly in conversation turns quickly exhausts API quotas (3+ hour lockout).
-- **Mandatory Subagent Directive**:
-  1. Whenever invoking subagents (`invoke_subagent`), inject the `agy-zen` execution protocol into their prompt so workers write code directly to disk and verify syntax deterministically (`bun build --no-bundle`, `python3 -m py_compile`).
-  2. Model Tiering: Default worker, reviewer, and explorer subagents to `Model: "flash"` or `Model: "flash_lite"`, leveraging `agy-zen` for direct-to-disk scaffolding.
-  3. Quality Parity Guarantee: Injects high specification density (explicit types, boundary checks) into worker prompts so output quality matches Gemini 3.8 Flash standards. Enforces deterministic syntax checks (`bun`, `tsc`, `py_compile`) and triggers the 2-Strike Escalation Gate (Gemini 3.8 Flash takes over immediately if any worker fails twice).
-  4. Zero-Delay Dispatch: When `/teamwork-preview` or `/boost` is triggered with a task or request, immediately launch the subagent fleet via `invoke_subagent`. Never hijack the task into single-agent sequential execution or stall in multi-turn questionnaires.
-  5. Zen Router for Audits & Analysis: Never let subagents run open-ended 50+ turn loops of `view_file` in the cloud. Direct workers to run `agy-zen --file <path> -p "..."` or `agy-audit <path>` via `run_command` for single-turn zero-cost multi-file analysis.
+### Native Multi-Agent Orchestration & Option B Architecture
+- **Native `/teamwork-preview` Protocol**: Runs strictly according to Google's official native specification:
+  1. Drafts `prompt_draft.md` with requirements and objective verification mechanisms.
+  2. Upon user approval, invokes `TypeName: "teamwork_preview"` on Cloud Gemini 3.8 Flash (`Model: "inherit"`).
+  3. Never hijacks `/teamwork-preview` into ad-hoc `self` subagents or injects local shell directives into cloud subagents.
+- **Clean Master-Worker Separation**:
+  - Primary Brain: Cloud Gemini 3.8 Flash natively handles reasoning, architecture, and multi-agent orchestration.
+  - Local & Zen Helpers: Used strictly as auxiliary CLI tools by the main agent for mechanical offloading (`agy-cleanlog`, `agy-commit`, `agy-zen --prompt "..." --out <path>`). Never intercepts or hijacks native cloud agent pipelines.
 <!-- zen_worker:end -->
 
 <!-- agentmemory:start -->

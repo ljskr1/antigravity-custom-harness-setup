@@ -40,44 +40,26 @@ Every active skill in your system (e.g. `/apple-design`, `/modern-web-guidance`,
 
 ---
 
-## Multi-Agent Subagent Protocol (`/teamwork-preview` & `/boost`)
+## Native Multi-Agent Orchestration & Clean Master-Worker Separation (Option B)
 
-### The 429 Quota Hazard & Root Cause Analysis
-In complex multi-agent workflows (such as `/teamwork-preview` parallel fleets or `/boost` orchestrators), spawning 4–10 subagents concurrently while allowing them to output large code blocks directly in conversation turns leads to rapid API rate limit exhaustion:
-`RESOURCE_EXHAUSTED (code 429): Individual quota reached. Resets in 3+ hours.`
+### 1. Native `/teamwork-preview` Protocol (Google Native Specification)
+- When the user triggers `/teamwork-preview`:
+  1. **Phase 1 (Drafting & Acceptance Criteria)**: Scaffolds `prompt_draft.md` with structured requirements (R1, R2...), objective verification mechanisms, and checkable acceptance criteria.
+  2. **Phase 2 (Native Delegation)**: Upon user confirmation ("go", "launch", "looks good"), delegates to Google's official native multi-agent framework:
+     - Invoke `TypeName: "teamwork_preview"`, `Model: "inherit"` (Gemini 3.8 Flash) with the complete prompt text.
+  3. **Zero Hijacking & Zero Interference**:
+     - NEVER replace `teamwork_preview` with ad-hoc `TypeName: "self"` subagents.
+     - NEVER inject alien local shell directives into Google's native cloud subagents.
+     - Allow Google's built-in cloud Orchestrator, Explorers, Implementers, and Reviewers to operate natively with full platform capability.
 
-### Mandatory Subagent Delegation Rules
-Whenever orchestrating or invoking subagents via `invoke_subagent`:
+### 2. Clean Master-Worker Separation
+- **Primary Brain (Cloud Gemini 3.8 Flash)**:
+  - Natively handles 100% of high-level architecture, design reasoning, surgical line reviews, and multi-agent orchestration.
+- **Local & Zen Router Fleet (Mechanical Utility Sidecar Only)**:
+  - Local Ollama and Zen Router exist strictly as auxiliary CLI tools for mechanical offloading:
+    - `agy-cleanlog`: Compresses verbose test suites and terminal traces (Qwen 1.5B) before pasting to cloud context.
+    - `agy-commit`: Audits staged git diffs and drafts conventional commit messages (Qwen 7B).
+    - `agy-zen`: Scaffolds repetitive single-file boilerplate or mock fixtures directly to disk when explicitly called via CLI (`agy-zen --prompt "..." --out <path>`).
+  - These sidecar tools never intercept, modify, or hijack Google's native cloud agent pipeline.
 
-1. **Mandatory Zen Router Directive Injection**:
-   Every prompt generated for a worker, reviewer, explorer, or fixer subagent **MUST** inject the local worker directive:
-   ```text
-   [MANDATORY MASTER-WORKER EXECUTION PROTOCOL]
-   DO NOT burn cloud tokens generating large code files or running unbounded cloud read loops.
-   You have access to the local Zen Router on port 3010 and the local Ollama fleet on port 11434:
-   - Code Analysis & Audits: Run `agy-zen --file <path> -p "..."` or `agy-audit <path>` via run_command to get full multi-file analysis in 1 zero-cost turn instead of 40 cloud view_file turns.
-   - File Scaffolding: Run `agy-zen --model mimo-v2.5-free --prompt "..." --out <path>` via run_command.
-   - Deterministic AST Check: Run `bun build --no-bundle <file>` or `python3 -m py_compile <file>`.
-   - Noisy Test Logs: Pipe terminal output through `agy-cleanlog` (e.g. `npm test 2>&1 | agy-cleanlog`).
-   - Git Diffs: Run `agy-commit` locally.
-   - Bounded Turns: Never run open-ended exploration loops in the cloud.
-   ```
-
-2. **Subagent Model Tiering Hierarchy**:
-   - **Orchestrator / Primary Lead**: Cloud Gemini 3.8 Flash (High Thinking) for macro-level architectural synthesis.
-   - **Worker / Scaffolder / Reviewer / Challenger Subagents**: MUST default to `Model: "flash"` or `Model: "flash_lite"`.
-   - Never spawn multiple parallel worker subagents outputting massive code directly in conversation turns. Using `flash` for subagents combined with `agy-zen` for direct-to-disk code generation yields 10× higher concurrency limits and prevents 429 quota lockouts.
-
-3. **Compact Handoff Contracts**:
-   - Subagents must report back with concise status summaries (file created, AST validity status, tests passed) rather than pasting full multi-hundred-line code files into inter-agent messages.
-
-4. **The Quality Parity Guarantee (Matching Gemini 3.8 Flash Standards)**:
-   - **Specification Density**: Workers never guess requirements. The orchestrator must inject explicit TypeScript/Python types, error invariants, and boundary checks into the worker prompt.
-   - **Deterministic Validation Gate**: Every generated file must be compiled and validated deterministically (`bun build --no-bundle`, `python3 -m py_compile`, or unit tests) before being accepted.
-   - **The 2-Strike Escalation Gate**: If a free worker fails verification twice, Cloud Gemini 3.8 Flash takes over immediately and writes/edits the file directly. No degraded code ever ships.
-
-5. **Zero-Delay Dispatch on `/teamwork-preview` & `/boost` (No Single-Agent Hijacking)**:
-   - When the user issues `/teamwork-preview` or `/boost` with an objective, task, or audit request, **NEVER hijack the task into single-agent sequential execution**.
-   - Do NOT stall in multi-turn questionnaires, and do NOT perform whole-codebase audits alone as a single agent.
-   - Immediately decompose the task and dispatch the subagent fleet via `invoke_subagent` (workers defaulting to `Model: "flash"` or `Model: "flash_lite"` with `agy-zen` directives). Subagents work in parallel and report back concise contracts.
 

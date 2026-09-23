@@ -80,7 +80,7 @@ def main():
         f"  1. Master Architect (Cloud Gemini): Handles macro planning, architecture, and verification.\n"
         f"  2. Free Code Generation: Delegate heavy file scaffolding to 'agy-zen --prompt \"...\" --out <file>' to protect context.\n"
         f"  3. Token Efficiency: Pipe noisy logs through agy-cleanlog and diffs through agy-commit.\n"
-        f"  4. Subagents (/teamwork-preview & /boost): Delegate audits & scaffolding to 'agy-zen --file <path>' or 'agy-audit' (Model: 'flash')—never run 50+ turn cloud view_file loops to prevent 429 lockouts."
+        f"  4. Native /teamwork-preview (Option B): Runs native Google 'teamwork_preview' subagent on Cloud Gemini 3.8 Flash (Model: 'inherit') without hijacking. Zen/Ollama act strictly as CLI tools for mechanical offloading."
     )
 
     output = {

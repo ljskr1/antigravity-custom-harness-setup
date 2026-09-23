@@ -141,7 +141,8 @@ The Antigravity slash command menu (`/`) provides two distinct classes of comman
    - **`/schedule`**: Recurring background cron schedules or one-time deferred timers.
    - **`/browser`**: Dedicated browser agent for DOM automation, web scraping, and E2E browser flows.
    - **`/grill-me`**: Interactive interview mode to stress-test requirements and surface trade-offs before building.
-   - **`/teamwork-preview`**: Parallel subagent fleet to tackle large multi-component projects concurrently.
+   - **`/teamwork-preview`**: Parallel subagent fleet to tackle large multi-component projects concurrently (Google Cloud native).
+   - **`/zen-team`**: Autonomous two-phase teamwork fleet powered by local Zen Router (MiMo v2.5 / Muse Spark) and Ollama (DeepSeek-R1) with zero cloud token consumption.
    - **`/learn`**: Reflect on successes or corrections to persist durable rules and skills.
    - **`/boost`**: Multi-agent orchestrator for complex reasoning, planning, and high-assurance algorithmic audits.
 

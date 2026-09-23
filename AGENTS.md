@@ -20,7 +20,8 @@ The slash command palette (`/`) encompasses two distinct categories:
 - **`/schedule`**: Deferred timers or recurring background cron jobs.
 - **`/browser`**: Dedicated browser automation agent for DOM scraping, navigation, and web verification.
 - **`/grill-me`**: Interactive interview mode to dissect requirements, test edge cases, and align on architecture before coding.
-- **`/teamwork-preview`**: Parallel subagent fleet to divide and conquer large deliverables across isolated workspaces.
+- **`/teamwork-preview`**: Parallel subagent fleet to divide and conquer large deliverables across isolated workspaces (Google Cloud native).
+- **`/zen-team`**: Autonomous two-phase teamwork fleet powered by local Zen Router (MiMo v2.5 / Muse Spark) and Ollama (DeepSeek-R1) with zero cloud token consumption.
 - **`/learn`**: Reflect on corrections or workflows to capture durable rules and skills.
 - **`/boost`**: Deep multi-agent orchestrator for complex reasoning, planning, and high-assurance algorithmic audits.
 

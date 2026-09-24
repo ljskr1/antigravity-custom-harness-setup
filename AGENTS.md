@@ -63,4 +63,15 @@ Every active skill in your system (e.g. `/apple-design`, `/modern-web-guidance`,
     - `agy-zen`: Scaffolds repetitive single-file boilerplate or mock fixtures directly to disk when explicitly called via CLI (`agy-zen --prompt "..." --out <path>`).
   - These sidecar tools never intercept, modify, or hijack Google's native cloud agent pipeline.
 
+### 3. The Prompt Contract Protocol (Contract-Level Worker Prompting)
+- Small and free worker models (`qwen2.5-coder:7b`, `mimo-v2.5-free`) are literal code executors that default to generic training habits unless constrained.
+- **Never economize on instruction depth from Cloud Gemini**: Spending 300–500 cloud tokens to provide an exhaustive, contract-level prompt achieves 95%+ first-pass success:
+  1. **Explicit DOM & State Contracts**: Specify exact HTML element IDs, `data-*` attributes (e.g. `data-segment="<name>"`), classes, and matching JavaScript event handlers and query selectors so the worker never desynchronizes markup from script.
+  2. **Negative Constraints ("NEVER" Rules)**: Explicitly forbid bad training defaults:
+     - *"NEVER reduce touch targets below 44×44pt in media queries."*
+     - *"NEVER use linear or ease-in-out transitions for interactive controls."*
+     - *"NEVER omit accessibility roles (role='tablist', role='tab', aria-selected) or unhandled error states."*
+  3. **Exact Mathematical & Physics Tokens**: Supply concrete CSS cubic-bezier curves (e.g., `cubic-bezier(0.25, 1, 0.5, 1)`), exact diffused shadow opacities (alpha ≤ 0.28), and exact typography stacks directly in the prompt.
+
+
 

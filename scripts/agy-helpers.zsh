@@ -129,3 +129,25 @@ agy-graphify() {
   echo "Running 100% offline Graphify extraction on $target with Qwen 7B Coder..."
   graphify extract --backend ollama --model qwen2.5-coder:7b "$target"
 }
+
+# 6. Unified Helper Directory & Status
+# Usage: agy-help
+agy-help() {
+  cat <<'EOF'
+Antigravity Local Sidecar & Zen Fleet Overview:
+----------------------------------------------------------------------
+• agy-cleanlog      Pipe noisy logs/test output to compress via Qwen 1.5B
+                    Usage: npm test 2>&1 | agy-cleanlog
+• agy-commit        Audit git diff for leaks and draft conventional commit
+                    Usage: agy-commit
+• agy-tests <file>  Generate unit tests for source file via Qwen 7B Coder
+                    Usage: agy-tests src/service.ts
+• agy-audit <file>  Deep adversarial logic/concurrency audit via DeepSeek-R1
+                    Usage: agy-audit src/queue.go
+• agy-graphify <dir> Offline AST knowledge graph extraction via Qwen 7B
+                    Usage: agy-graphify ./src
+• agy-zen           Scaffold boilerplate directly to disk via Zen Router
+                    Usage: agy-zen --prompt "..." --out path/to/file
+----------------------------------------------------------------------
+EOF
+}

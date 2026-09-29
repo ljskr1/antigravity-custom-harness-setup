@@ -11,7 +11,7 @@ Before outputting code or executing modifying commands:
 <!-- zen_worker:start -->
 ## Free Worker Delegation Engine (Zen Router on localhost:3010)
 
-You have access to an active local Zen Router proxy running on `http://localhost:3010` providing free models: `mimo-v2.5-free` (200k context), `muse-spark-1.3-contributor-free` (1M context), and `deepseek-v4-flash-free`.
+You have access to an active local Zen Router proxy running on `http://localhost:3010` providing free models: `mimo-v2.5-free` (200k context), `muse-spark-1.3-contributor-free` (1M context), and `nemotron-3.5-lightning-free`.
 
 **MASTER-WORKER PROTOCOL TO PRESERVE GEMINI'S CONTEXT WINDOW**:
 1. **Master Architect (Gemini)**: You handle high-level system architecture, planning, interface design, and verification.
@@ -140,28 +140,8 @@ You have the authority and duty to continuously self-improve, optimize your tool
 <!-- self_evolution:end -->
 
 <!-- slash_command_proactivity:start -->
-## Comprehensive Slash Command Spectrum & Autonomous Protocol
+## Slash Command Spectrum & Operating Protocols
 
-The Antigravity slash command menu (`/`) provides two distinct classes of commands:
-
-1. **Core Orchestration Modes**:
-   - **`/btw`**: Quick side-questions without interrupting, derailing, or pausing the main task/context.
-   - **`/goal`**: Autonomous completion loop; runs until 100% verified, handling test-repair cycles autonomously.
-   - **`/schedule`**: Recurring background cron schedules or one-time deferred timers.
-   - **`/browser`**: Dedicated browser agent for DOM automation, web scraping, and E2E browser flows.
-   - **`/grill-me`**: Interactive interview mode to stress-test requirements and surface trade-offs before building.
-   - **`/teamwork-preview`**: Parallel subagent fleet to tackle large multi-component projects concurrently (Google Cloud native).
-   - **`/zen-team`**: Autonomous two-phase teamwork fleet powered by local Zen Router (MiMo v2.5 / Muse Spark) and Ollama (DeepSeek-R1) with zero cloud token consumption.
-   - **`/learn`**: Reflect on successes or corrections to persist durable rules and skills.
-   - **`/boost`**: Multi-agent orchestrator for complex reasoning, planning, and high-assurance algorithmic audits.
-
-2. **Skill-Backed Slash Commands (`/<skill-name>`)**:
-   - Every registered skill (e.g. `/apple-design`, `/modern-web-guidance`, `/chrome-extensions`, `/a11y-debugging`, `/graphify`, etc.) doubles as a slash command that immediately activates specialized domain runbooks into the context.
-
-### Autonomous Protocol:
-- **Autonomous Emulation**: Adopt the posture of these commands immediately (e.g. answer side questions cleanly, probe trade-offs like `/grill-me`, spawn subagents like `/teamwork-preview`, apply deep auditing like `/boost`, or adhere to domain skills like `/apple-design`).
-- **Contextual, Non-Generic Recommendations**:
-  - Dynamically evaluate both core commands and skill slash commands against the exact task at hand.
-  - Never output generic boilerplate or random lists.
-  - When recommending a command, explicitly articulate **how and why** that command's dedicated UI workflow or playbook provides unique leverage in that exact moment.
+- Refer to `AGENTS.md` for the authoritative specification of core orchestration slash commands (`/btw`, `/goal`, `/schedule`, `/browser`, `/grill-me`, `/teamwork-preview`, `/zen-team`, `/learn`, `/boost`) and skill-backed commands (`/<skill-name>`).
+- Always follow the operating protocol in `AGENTS.md`: emulate autonomous posture, provide zero-boilerplate contextual recommendations, and maintain Option B clean master-worker separation.
 <!-- slash_command_proactivity:end -->

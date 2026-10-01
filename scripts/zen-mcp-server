@@ -20,7 +20,8 @@ ZEN_MODELS_URL = os.environ.get("ZEN_ROUTER_MODELS_URL", "http://localhost:3010/
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/chat")
 OLLAMA_TAGS_URL = os.environ.get("OLLAMA_TAGS_URL", "http://localhost:11434/api/tags")
 
-DEFAULT_ZEN_MODEL = "mimo-v2.6-flash-free"
+DEFAULT_ZEN_MODEL = "muse-spark-1.3-contributor-free"
+DEFAULT_FALLBACK_MODEL = "mimo-v2.6-flash-free"
 DEFAULT_AUDIT_MODEL = "deepseek-r1:8b"
 DEFAULT_COMPRESS_MODEL = "qwen2.5-coder:1.5b"
 
@@ -306,7 +307,7 @@ TOOLS = [
         "name": "zen_scaffold",
         "description": (
             "Scaffolds boilerplate files, schemas, and mock fixtures directly onto disk "
-            "using free local Zen Router models (mimo-v2.6-flash-free, muse-spark-1.3-contributor-free, nemotron-3.5-lightning-free). "
+            "using free local Zen Router models (muse-spark-1.3-contributor-free, mimo-v2.6-flash-free, nemotron-3.5-lightning-free). "
             "USE THIS TOOL INSTEAD OF write_to_file for generating large new files, repetitive DTOs, "
             "unit tests, and mock fixtures to conserve Cloud Gemini context tokens with 0 cost."
         ),
@@ -323,8 +324,8 @@ TOOLS = [
                 },
                 "model": {
                     "type": "string",
-                    "description": "Zen model to use: 'mimo-v2.6-flash-free' (default, 200k context), 'muse-spark-1.3-contributor-free' (1M context), or 'nemotron-3.5-lightning-free'.",
-                    "default": "mimo-v2.6-flash-free"
+                    "description": "Zen model to use: 'muse-spark-1.3-contributor-free' (default, 1M context), 'mimo-v2.6-flash-free' (200k context), or 'nemotron-3.5-lightning-free'.",
+                    "default": "muse-spark-1.3-contributor-free"
                 }
             },
             "required": ["prompt", "target_file"]

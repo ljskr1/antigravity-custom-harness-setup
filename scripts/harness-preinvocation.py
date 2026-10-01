@@ -37,7 +37,7 @@ def probe_zen():
                 data = json.loads(response.read().decode())
                 raw_models = [m.get("id", "") for m in data.get("data", []) if m.get("id")]
                 # Filter out known unavailable models and prioritize reliable free workers
-                preferred = ["mimo-v2.6-flash-free", "muse-spark-1.3-contributor-free", "nemotron-3.5-lightning-free", "big-pickle"]
+                preferred = ["muse-spark-1.3-contributor-free", "mimo-v2.6-flash-free", "nemotron-3.5-lightning-free", "big-pickle"]
                 ordered = [m for m in preferred if m in raw_models]
                 # deepseek-v4-flash-free is excluded due to recurring upstream 503/rate-limit instability on the free router
                 for m in raw_models:

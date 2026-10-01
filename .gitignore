@@ -59,4 +59,5 @@ LINKEDIN_POST.md
 # Local telemetry test scratch
 src/
 telemetry_streamer.py
+product.html
 

@@ -15,8 +15,8 @@ import urllib.request
 import urllib.error
 
 ZEN_URL = os.environ.get("ZEN_ROUTER_URL", "http://localhost:3010/v1/chat/completions")
-DEFAULT_MODEL = "mimo-v2.6-flash-free"
-FALLBACK_MODEL = "muse-spark-1.3-contributor-free"
+DEFAULT_MODEL = "muse-spark-1.3-contributor-free"
+FALLBACK_MODEL = "mimo-v2.6-flash-free"
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/chat")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5-coder:7b")
 
@@ -265,7 +265,7 @@ def main():
     if piped_content:
         user_message += f"### Input Data:\n```\n{piped_content}\n```\n\n"
     if args.prompt:
-        user_message += f"### Instruction:\n{args.prompt}"
+        user_message += args.prompt.strip()
 
     if not user_message.strip():
         parser.print_help(sys.stderr)

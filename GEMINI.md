@@ -11,12 +11,12 @@ Before outputting code or executing modifying commands:
 <!-- zen_worker:start -->
 ## Free Worker Delegation Engine (Zen Router on localhost:3010)
 
-You have access to an active local Zen Router proxy running on `http://localhost:3010` providing free models: `mimo-v2.6-flash-free` (200k context), `muse-spark-1.3-contributor-free` (1M context), and `nemotron-3.5-lightning-free`.
+You have access to an active local Zen Router proxy running on `http://localhost:3010` providing free models: `muse-spark-1.3-contributor-free` (1M context), `mimo-v2.6-flash-free` (200k context), and `nemotron-3.5-lightning-free`.
 
 **MASTER-WORKER PROTOCOL TO PRESERVE GEMINI'S CONTEXT WINDOW**:
 1. **Master Architect (Gemini)**: You handle high-level system architecture, planning, interface design, and verification.
 2. **Free Worker Delegation (`zen_scaffold` or `agy-zen`)**: When a task involves writing large new files, massive boilerplate, or extensive mock fixtures, DO NOT burn Gemini's context window generating hundreds of lines of code.
-   - Use the first-class MCP tool `zen_scaffold` (server: `zen-sidecar`) or CLI `agy-zen --model mimo-v2.6-flash-free --prompt "<requirements>" --out <path>` via `run_command`.
+   - Use the first-class MCP tool `zen_scaffold` (server: `zen-sidecar`) or CLI `agy-zen --model muse-spark-1.3-contributor-free --prompt "<requirements>" --out <path>` via `run_command`.
    - The worker generates the complete code file directly onto disk with syntax validation, saving thousands of cloud tokens.
 3. **Verification**: Gemini verifies the generated code with tests (`npm test`, `pytest`, `bun`) or surgical line reviews, maintaining a light, ultra-efficient context window throughout the session.
 
@@ -31,7 +31,7 @@ You have access to an active local Zen Router proxy running on `http://localhost
 | **UI Math & Physics** | ❌ **NEVER** (Precision rendering risk) | ✅ Canvas 2D gradients, squircle curves, physics |
 
 ### The Prompt Contract Protocol (Contract-Level Worker Prompting)
-Free and smaller local/Zen workers (`qwen2.5-coder:7b`, `mimo-v2.6-flash-free`) are literal code executors that default to generic (and often buggy) training habits unless constrained. **Do NOT economize on instruction depth from Cloud Gemini**. Spending 300–500 cloud tokens to provide an exhaustive, contract-level prompt achieves 95%+ first-pass success:
+Free and smaller local/Zen workers (`qwen2.5-coder:7b`, `muse-spark-1.3-contributor-free`, `mimo-v2.6-flash-free`) are literal code executors that default to generic (and often buggy) training habits unless constrained. **Do NOT economize on instruction depth from Cloud Gemini**. Spending 300–500 cloud tokens to provide an exhaustive, contract-level prompt achieves 95%+ first-pass success:
 1. **Explicit DOM & State Contracts**: Specify exact HTML element IDs, `data-*` attributes (e.g. `data-segment="<name>"`), classes, and matching JavaScript event handlers and query selectors so the worker never desynchronizes markup from script.
 2. **Negative Constraints ("NEVER" Rules)**: Explicitly forbid bad training defaults:
    - e.g., *"NEVER reduce touch targets below 44×44pt in media queries."*

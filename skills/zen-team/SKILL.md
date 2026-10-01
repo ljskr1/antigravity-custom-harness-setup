@@ -1,13 +1,13 @@
 ---
 name: zen-team
 description: >-
-  Two-phase multi-agent teamwork system powered by local Zen Router (MiMo v2.5 / Muse Spark)
+  Two-phase multi-agent teamwork system powered by local Zen Router (Muse Spark 1.3 / MiMo v2.6-Flash)
   and Ollama (DeepSeek-R1 / Qwen 7B). Mimics Google's /teamwork-preview with zero cloud token consumption.
 ---
 
 # Zen Team — Zero-Token Multi-Agent Fleet Protocol
 
-The `/zen-team` command provides an autonomous, two-phase multi-agent development workflow that mirrors Google's native `/teamwork-preview`, but routes code generation, multi-file analysis, and quality audits through **local Zen Router models** (`mimo-v2.5-free`, `muse-spark-1.3-contributor-free`) and the **local Ollama fleet** (`deepseek-r1:8b`, `qwen2.5-coder:7b`).
+The `/zen-team` command provides an autonomous, two-phase multi-agent development workflow that mirrors Google's native `/teamwork-preview`, but routes code generation, multi-file analysis, and quality audits through **local Zen Router models** (`muse-spark-1.3-contributor-free`, `mimo-v2.6-flash-free`) and the **local Ollama fleet** (`deepseek-r1:8b`, `qwen2.5-coder:7b`).
 
 ---
 
@@ -35,7 +35,7 @@ When `/zen-team` is triggered, immediately maintain a **`zen_draft.md` artifact*
 
 > Status: Drafting — awaiting user approval
 > Master Architect: Cloud Gemini 3.8 Flash
-> Worker Engine: Zen Router (mimo-v2.5-free / muse-spark-1.3-contributor-free)
+> Worker Engine: Zen Router (muse-spark-1.3-contributor-free / mimo-v2.6-flash-free)
 > Quality Auditor: Local Ollama (deepseek-r1:8b)
 > Working Directory: [Absolute Path]
 
@@ -85,15 +85,15 @@ flowchart TD
 ### Stage 1: Zen Worker Code Generation (`agy-zen`)
 Do NOT output large code blocks in cloud turns. Delegate file generation directly to disk using `agy-zen`:
 ```bash
-agy-zen --model mimo-v2.5-free --prompt "<detailed requirements with explicit types & invariants>" --out <path/to/target/file>
+agy-zen --model muse-spark-1.3-contributor-free --prompt "<detailed requirements with explicit types & invariants>" --out <path/to/target/file>
 ```
-For large multi-file refactors or deep contextual input:
+For fast alternative passes:
 ```bash
-agy-zen --model muse-spark-1.3-contributor-free --file <context-file> --prompt "<requirements>" --out <target-file>
+agy-zen --model mimo-v2.6-flash-free --file <context-file> --prompt "<requirements>" --out <target-file>
 ```
 
 #### The Prompt Contract Protocol (Contract-Level Worker Prompting)
-Small and free worker models (`qwen2.5-coder:7b`, `mimo-v2.5-free`) are literal code executors that default to generic training habits unless constrained. **Do NOT economize on instruction depth from Cloud Gemini**. Spending 300–500 cloud tokens to provide an exhaustive, contract-level prompt achieves 95%+ first-pass success:
+Small and free worker models (`qwen2.5-coder:7b`, `muse-spark-1.3-contributor-free`, `mimo-v2.6-flash-free`) are literal code executors that default to generic training habits unless constrained. **Do NOT economize on instruction depth from Cloud Gemini**. Spending 300–500 cloud tokens to provide an exhaustive, contract-level prompt achieves 95%+ first-pass success:
 1. **Explicit DOM & State Contracts**: Specify exact HTML element IDs, `data-*` attributes (e.g., `data-segment="<name>"`), classes, and matching JavaScript event handlers and query selectors so the worker never desynchronizes markup from script.
 2. **Negative Constraints ("NEVER" Rules)**: Explicitly forbid bad training defaults:
    - e.g., *"NEVER reduce touch targets below 44×44pt in media queries."*

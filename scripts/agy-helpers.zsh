@@ -83,7 +83,7 @@ agy-commit() {
     "Analyze this git diff. Check for forgotten debug prints or secrets, and output a clean Conventional Commit message."
 }
 
-# 3. Local Unit Test Scaffolder
+# 3. Unit Test Scaffolder (Zen Router Muse Spark 1.3 Free)
 # Usage: agy-tests src/services/auth.ts
 agy-tests() {
   local file="$1"
@@ -92,13 +92,13 @@ agy-tests() {
     return 1
   fi
 
-  if ! _ensure_ollama; then
+  if command -v agy-zen >/dev/null 2>&1; then
+    echo "Scaffolding unit tests for $file using Zen Router (Muse Spark 1.3 Free)..." >&2
+    agy-zen --model muse-spark-1.3-contributor-free --prompt "Write comprehensive unit tests with edge-case coverage for this code. Output ONLY valid test code." -f "$file"
+  else
+    echo "Zen Router client (agy-zen) not found. Ask Cloud Gemini to generate unit tests directly." >&2
     return 1
   fi
-
-  echo "Scaffolding unit tests for $file using Qwen 7B Coder..." >&2
-  cat "$file" | ollama run qwen2.5-coder:7b \
-    "Write comprehensive unit tests with edge-case coverage for this code. Output ONLY valid test code."
 }
 
 # 4. Deep Algorithmic & Concurrency Logic Audit (DeepSeek-R1)
@@ -140,7 +140,7 @@ Antigravity Local Sidecar & Zen Fleet Overview:
                     Usage: npm test 2>&1 | agy-cleanlog
 • agy-commit        Audit git diff for leaks and draft conventional commit
                     Usage: agy-commit
-• agy-tests <file>  Generate unit tests for source file via Qwen 7B Coder
+• agy-tests <file>  Generate unit tests for source file via Zen Router (Muse Spark 1.3)
                     Usage: agy-tests src/service.ts
 • agy-audit <file>  Deep adversarial logic/concurrency audit via DeepSeek-R1
                     Usage: agy-audit src/queue.go

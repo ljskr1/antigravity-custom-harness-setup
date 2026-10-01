@@ -227,16 +227,7 @@ def call_zen_with_fallback(model: str, system: str, user_message: str) -> tuple[
     except Exception as e:
         print(f"Warning: Fallback model {FALLBACK_MODEL} HTTP stream failed: {e}.", file=sys.stderr)
 
-    # 3. Fall back to local Ollama fleet (qwen2.5-coder:7b)
-    print(f"Info: Zen Router unavailable; falling back to local Ollama ({OLLAMA_MODEL})...", file=sys.stderr)
-    try:
-        content = call_ollama(system, user_message, OLLAMA_MODEL)
-        if content.strip():
-            return content, f"ollama/{OLLAMA_MODEL}"
-    except Exception as e:
-        print(f"Warning: Local Ollama fallback failed: {e}", file=sys.stderr)
-
-    raise RuntimeError("All workers (Zen Router and local Ollama) failed to generate code.")
+    raise RuntimeError(f"Zen Router workers ({model}, {FALLBACK_MODEL}) failed. Escalating to Cloud Gemini/Claude directly.")
 
 def main():
     parser = argparse.ArgumentParser(description="Antigravity Zen Router Worker Client")

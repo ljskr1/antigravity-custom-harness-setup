@@ -64,7 +64,7 @@ Every active skill in your system (e.g. `/apple-design`, `/modern-web-guidance`,
   - These sidecar tools never intercept, modify, or hijack Google's native cloud agent pipeline.
 
 ### 3. The Prompt Contract Protocol (Contract-Level Worker Prompting)
-- Small and free worker models (`qwen2.5-coder:7b`, `muse-spark-1.3-contributor-free`, `mimo-v2.6-flash-free`) are literal code executors that default to generic training habits unless constrained.
+- Free Zen Router worker models (`muse-spark-1.3-contributor-free`, `mimo-v2.6-flash-free`) are literal code executors that default to generic training habits unless constrained.
 - **Never economize on instruction depth from Cloud Gemini**: Spending 300–500 cloud tokens to provide an exhaustive, contract-level prompt achieves 95%+ first-pass success:
   1. **Explicit DOM & State Contracts**: Specify exact HTML element IDs, `data-*` attributes (e.g. `data-segment="<name>"`), classes, and matching JavaScript event handlers and query selectors so the worker never desynchronizes markup from script.
   2. **Negative Constraints ("NEVER" Rules)**: Explicitly forbid bad training defaults:
@@ -72,6 +72,12 @@ Every active skill in your system (e.g. `/apple-design`, `/modern-web-guidance`,
      - *"NEVER use linear or ease-in-out transitions for interactive controls."*
      - *"NEVER omit accessibility roles (role='tablist', role='tab', aria-selected) or unhandled error states."*
   3. **Exact Mathematical & Physics Tokens**: Supply concrete CSS cubic-bezier curves (e.g., `cubic-bezier(0.25, 1, 0.5, 1)`), exact diffused shadow opacities (alpha ≤ 0.28), and exact typography stacks directly in the prompt.
+
+### 4. The 2-Strike Verification & Latency Fallback Protocol
+- **Strict Local Ollama Code Limit**: **Local Ollama models (`qwen2.5-coder:7b`, etc.) are NOT good enough to generate large amounts of code or complex project logic.** Local Qwen 2.5 is strictly restricted to mechanical CLI tasks (`agy-cleanlog`, `agy-commit`, `agy-graphify`). Never delegate complex application code, project files, or UI logic to local Ollama.
+- **Remote Worker Queue Fallback**: If remote Zen Router free workers (`muse-spark-1.3-contributor-free`, `mimo-v2.6-flash-free`) experience queue delays or timeouts (>20s), **Cloud Gemini 3.8 Flash takes over immediately** and writes directly to disk. Never fall back to local Ollama for code generation.
+- **DeepSeek-R1 Audit Bounding**: When running `local_audit` or `agy-audit`, extract logic and script blocks (<4,000 tokens) rather than raw SVG or CSS stylesheets. Passing markup bloat causes DeepSeek-R1 to hit 3-minute reasoning deadline timeouts.
+- **Chrome DevTools Screenshots**: In `take_screenshot`, omit `filePath` so the tool automatically offloads the capture to artifact storage without triggering workspace root containment errors.
 
 
 

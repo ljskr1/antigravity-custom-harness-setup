@@ -104,7 +104,8 @@ def main():
         f"  1. Master Architect (Cloud Gemini): Handles macro planning, architecture, and verification.\n"
         f"  2. Free Code Generation: Use MCP tool 'zen_scaffold' (server: zen-sidecar) instead of write_to_file for large boilerplate/fixtures (0 cloud tokens).\n"
         f"  3. Local Audits & Logs: Use MCP tool 'local_audit' (DeepSeek-R1) for concurrency/race checks, and 'local_compress_log' / agy-cleanlog for noisy test output.\n"
-        f"  4. Native /teamwork-preview (Option B): Runs native Google 'teamwork_preview' subagent on Cloud Gemini 3.8 Flash (Model: 'inherit') without hijacking."
+        f"  4. Native /teamwork-preview (Option B): Runs native Google 'teamwork_preview' subagent on Cloud Gemini 3.8 Flash (Model: 'inherit') without hijacking.\n"
+        f"  5. Privacy Guardrail: NEVER send sensitive data (API keys, secrets, credentials, PII, proprietary IP) to Meta or MiMo free workers."
     )
 
     output = {

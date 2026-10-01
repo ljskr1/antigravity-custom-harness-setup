@@ -1,0 +1,11 @@
+{
+  "harness-gate": {
+    "PreInvocation": [
+      {
+        "command": "python3 ~/.gemini/config/hooks/harness-preinvocation.py",
+        "timeout": 5,
+        "type": "command"
+      }
+    ]
+  }
+}

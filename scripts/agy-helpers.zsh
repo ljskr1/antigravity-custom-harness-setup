@@ -48,9 +48,12 @@ agy-cleanlog() {
   fi
 
   echo "Compressing log with local Qwen 1.5B..." >&2
+  local bounded_input
+  bounded_input=$(echo "$input" | tail -c 8000)
+  local prompt="You are a developer log compression filter. Extract ONLY the root cause error, failing test/module name, and relevant stack trace in under 12 lines. Strip all noisy passing tests, build logs, and progress bars:\n\n$bounded_input"
+  
   local summary
-  summary=$(echo "$input" | ollama run qwen2.5-coder:1.5b \
-    "You are a developer log compression filter. Extract ONLY the root cause error, failing test/module name, and relevant stack trace in under 12 lines. Strip all noisy passing tests, build logs, and progress bars.")
+  summary=$(curl -s http://localhost:11434/api/generate -d "$(jq -n --arg m "qwen2.5-coder:1.5b" --arg p "$prompt" '{model: $m, prompt: $p, stream: false, options: {temperature: 0.1}}')" | jq -r '.response')
   
   echo "\n--- Compressed Error Summary (Copied to Clipboard) ---"
   echo "$summary"
@@ -62,9 +65,12 @@ agy-cleanlog() {
 # 2. Local Diff Review & Conventional Commit Generator
 # Usage: agy-commit   (reviews staged git diff)
 agy-commit() {
+  local stat
   local diff
+  stat=$(git diff --staged --stat)
   diff=$(git diff --staged)
   if [ -z "$diff" ]; then
+    stat=$(git diff --stat)
     diff=$(git diff)
     if [ -z "$diff" ]; then
       echo "No git changes detected."
@@ -78,9 +84,22 @@ agy-commit() {
     return 1
   fi
 
+  local bounded_diff
+  bounded_diff=$(echo "$diff" | head -c 12000)
+
+  local prompt="Here is the git diff summary and changes:
+### Changed Files:
+$stat
+
+### Diff Excerpt:
+$bounded_diff
+
+Instructions:
+1. Check for any exposed secrets, keys, or forgotten debug prints.
+2. Propose a single, concise Conventional Commit message (feat, fix, docs, refactor, chore) with an optional 2-3 bullet description. Output ONLY the commit message."
+
   echo "Analyzing diff with local Qwen 7B Coder..." >&2
-  echo "$diff" | ollama run qwen2.5-coder:7b \
-    "Analyze this git diff. Check for forgotten debug prints or secrets, and output a clean Conventional Commit message."
+  curl -s http://localhost:11434/api/generate -d "$(jq -n --arg m "qwen2.5-coder:7b" --arg p "$prompt" '{model: $m, prompt: $p, stream: false, options: {temperature: 0.2}}')" | jq -r '.response'
 }
 
 # 3. Unit Test Scaffolder (Zen Router Muse Spark 1.3 Free)
@@ -114,9 +133,13 @@ agy-audit() {
     return 1
   fi
 
+  local code
+  code=$(head -c 16000 "$file")
+
+  local prompt="Perform a deep step-by-step logic, race-condition, deadlock, and edge-case verification of this code. Output a concise 5-bullet audit report of risks and fixes:\n\n$code"
+
   echo "Running deep logic & race-condition audit with DeepSeek-R1..." >&2
-  cat "$file" | ollama run deepseek-r1:8b \
-    "Perform a deep step-by-step logic, race-condition, deadlock, and edge-case verification of this code. Output a concise 5-bullet audit report of risks and fixes."
+  curl -s http://localhost:11434/api/generate -d "$(jq -n --arg m "deepseek-r1:8b" --arg p "$prompt" '{model: $m, prompt: $p, stream: false, options: {temperature: 0.2}}')" | jq -r '.response'
 }
 
 # 5. Offline Zero-Cost Graphify Extraction
@@ -146,6 +169,8 @@ Antigravity Local Sidecar & Zen Fleet Overview:
                     Usage: agy-audit src/queue.go
 • agy-graphify <dir> Offline AST knowledge graph extraction via Qwen 7B
                     Usage: agy-graphify ./src
+• agy-update        Check and auto-update open-source tools (Graphify, AgentMemory, Ollama)
+                    Usage: agy-update   OR   agy-update --apply
 • agy-zen           Scaffold boilerplate directly to disk via Zen Router
                     Usage: agy-zen --prompt "..." --out path/to/file
 ----------------------------------------------------------------------

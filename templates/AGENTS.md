@@ -1,0 +1,91 @@
+# Antigravity Dynamic Agent System & Comprehensive Slash Command Protocol
+
+## Living Self-Learning Directive (`GEMINI.md` & `AGENTS.md`)
+- `GEMINI.md` and `AGENTS.md` are living, self-evolving documents.
+- In **every session**, the agent is required to update and refine these files whenever:
+  1. New user preferences, habits, or interaction modes are established.
+  2. Engineering patterns, tool configurations, or framework fixes are uncovered.
+  3. Existing instructions can be made sharper, more token-efficient, or deduplicated.
+- Never allow rules to remain static or decay. Active learning must be synthesized directly into these documents.
+
+---
+
+## The Complete Slash Command Spectrum (`/`)
+
+The slash command palette (`/`) encompasses two distinct categories:
+
+### 1. Core Orchestration Slash Commands
+- **`/btw`**: Quick side-questions without interrupting, pausing, or losing state in the primary active task.
+- **`/goal`**: Persistent autonomous execution until 100% finished with iterative self-healing test loops.
+- **`/schedule`**: Deferred timers or recurring background cron jobs.
+- **`/browser`**: Dedicated browser automation agent for DOM scraping, navigation, and web verification.
+- **`/grill-me`**: Interactive interview mode to dissect requirements, test edge cases, and align on architecture before coding.
+- **`/teamwork-preview`**: Parallel subagent fleet to divide and conquer large deliverables across isolated workspaces (Google Cloud native).
+- **`/zen-team`**: Autonomous two-phase teamwork fleet powered by local Zen Router (Muse Spark 1.3 / MiMo v2.6-Flash) and Ollama (DeepSeek-R1) with zero cloud token consumption.
+- **`/learn`**: Reflect on corrections or workflows to capture durable rules and skills.
+- **`/boost`**: Deep multi-agent orchestrator for complex reasoning, planning, and high-assurance algorithmic audits.
+
+### 2. Skill-Backed Slash Commands (`/<skill-name>`)
+Every active skill in your system (e.g. `/apple-design`, `/modern-web-guidance`, `/chrome-extensions`, `/a11y-debugging`, `/graphify`, etc.) functions as a direct slash command to inject specialized domain guidance into context.
+
+---
+
+## Operating Protocol
+1. **Autonomous Emulation**:
+   - Act in the spirit of these commands automatically (e.g. answer side queries cleanly without derailing, interrogate ambiguity like `/grill-me`, parallelize with subagents like `/teamwork-preview`, use deep reasoning like `/boost`, and uphold specialized skill standards).
+2. **Contextual Recommendations**:
+   - Recommend any core or skill-backed command whenever it delivers concrete leverage.
+   - Zero boilerplate: always explain the exact mechanical or domain-specific advantage of using that command in the current situation.
+3. **Session Learning Synchronization**:
+   - Persist structured facts to `agentmemory` and update `GEMINI.md` + `AGENTS.md` continuously as new behaviors are refined.
+
+---
+
+## Native Multi-Agent Orchestration & Clean Master-Worker Separation (Option B)
+
+### 1. Native `/teamwork-preview` Protocol (Google Native Specification)
+- When the user triggers `/teamwork-preview`:
+  1. **Phase 1 (Drafting & Acceptance Criteria)**: Scaffolds `prompt_draft.md` with structured requirements (R1, R2...), objective verification mechanisms, and checkable acceptance criteria.
+  2. **Phase 2 (Native Delegation)**: Upon user confirmation ("go", "launch", "looks good"), delegates to Google's official native multi-agent framework:
+     - Invoke `TypeName: "teamwork_preview"`, `Model: "inherit"` (Gemini 3.8 Flash) with the complete prompt text.
+  3. **Zero Hijacking & Zero Interference**:
+     - NEVER replace `teamwork_preview` with ad-hoc `TypeName: "self"` subagents.
+     - NEVER inject alien local shell directives into Google's native cloud subagents.
+     - Allow Google's built-in cloud Orchestrator, Explorers, Implementers, and Reviewers to operate natively with full platform capability.
+
+### 2. Clean Master-Worker Separation
+- **Primary Brain (Cloud Gemini 3.8 Flash)**:
+  - Natively handles 100% of high-level architecture, design reasoning, surgical line reviews, and multi-agent orchestration.
+- **Local & Zen Router Fleet (Mechanical Utility Sidecar Only)**:
+  - The cloud model MUST know all of these helpers and autonomously invoke them when the corresponding condition is met:
+
+| Helper Command | Local Model | Role & Advantage | Autonomous Trigger Condition |
+| :--- | :--- | :--- | :--- |
+| **`agy-update`** | `qwen2.5-coder:1.5b` | Distills release notes and changelogs before upgrading dependencies. | Autonomously run `agy-update` when checking, inspecting, or upgrading open-source tools (Graphify, AgentMemory). |
+| **`agy-cleanlog`** | `qwen2.5-coder:1.5b` | Strips progress bars and noise from test runs/builds, isolating core error stacks. | Autonomously pipe test/build stderr/stdout into `agy-cleanlog` or call `local_compress_log` whenever terminal output exceeds 30 lines. |
+| **`agy-commit`** | `qwen2.5-coder:7b` | Audits staged diffs for leaked secrets and crafts Conventional Commits. | Autonomously run `agy-commit` before drafting commit messages or creating git commits. |
+| **`agy-audit`** | `deepseek-r1:8b` | Adversarial reasoning checks on race conditions, concurrency, and mutexes. | Autonomously run `agy-audit <file>` or call `local_audit` when evaluating tricky multithreading, mutexes, race conditions, or complex state logic. |
+| **`agy-graphify`** | `qwen2.5-coder:7b` | Offline AST knowledge graph extraction without burning API limits. | Autonomously run `agy-graphify <dir>` for offline knowledge graph extraction without cloud API consumption. |
+| **`agy-zen`** | `muse-spark-1.3-contributor-free` | Scaffolds repetitive single-file boilerplate or mock fixtures directly to disk. | Scaffolding repetitive boilerplate via CLI (`agy-zen --prompt "..." --out <path>`) or MCP `zen_scaffold`. |
+
+  - These sidecar tools never intercept, modify, or hijack Google's native cloud agent pipeline.
+
+### 3. The Prompt Contract Protocol (Contract-Level Worker Prompting)
+- Free Zen Router worker models (`muse-spark-1.3-contributor-free`, `mimo-v2.6-flash-free`) are literal code executors that default to generic training habits unless constrained.
+- **Never economize on instruction depth from Cloud Gemini**: Spending 300–500 cloud tokens to provide an exhaustive, contract-level prompt achieves 95%+ first-pass success:
+  1. **Explicit DOM & State Contracts**: Specify exact HTML element IDs, `data-*` attributes (e.g. `data-segment="<name>"`), classes, and matching JavaScript event handlers and query selectors so the worker never desynchronizes markup from script.
+  2. **Negative Constraints ("NEVER" Rules)**: Explicitly forbid bad training defaults:
+     - *"NEVER reduce touch targets below 44×44pt in media queries."*
+     - *"NEVER use linear or ease-in-out transitions for interactive controls."*
+     - *"NEVER omit accessibility roles (role='tablist', role='tab', aria-selected) or unhandled error states."*
+  3. **Exact Mathematical & Physics Tokens**: Supply concrete CSS cubic-bezier curves (e.g., `cubic-bezier(0.25, 1, 0.5, 1)`), exact diffused shadow opacities (alpha ≤ 0.28), and exact typography stacks directly in the prompt.
+
+### 4. The 2-Strike Verification & Latency Fallback Protocol
+- **Zero Sensitive Data to Free Workers**: Sensitive data (API keys, credentials, private secrets, passwords, PII, proprietary IP, and confidential user payloads) must **NEVER** be sent to Meta or MiMo free worker models (or any external Zen Router free worker endpoints). All tasks involving sensitive data must be executed directly by Cloud Gemini or kept on vetted local-only execution.
+- **Strict Local Ollama Code Limit**: **Local Ollama models (`qwen2.5-coder:7b`, etc.) are NOT good enough to generate large amounts of code or complex project logic.** Local Qwen 2.5 is strictly restricted to mechanical CLI tasks (`agy-cleanlog`, `agy-commit`, `agy-graphify`). Never delegate complex application code, project files, or UI logic to local Ollama.
+- **Remote Worker Queue Fallback**: If remote Zen Router free workers (`muse-spark-1.3-contributor-free`, `mimo-v2.6-flash-free`) experience queue delays or timeouts (>20s), **Cloud Gemini 3.8 Flash takes over immediately** and writes directly to disk. Never fall back to local Ollama for code generation.
+- **DeepSeek-R1 Audit Bounding**: When running `local_audit` or `agy-audit`, extract logic and script blocks (<4,000 tokens) rather than raw SVG or CSS stylesheets. Passing markup bloat causes DeepSeek-R1 to hit 3-minute reasoning deadline timeouts.
+- **Chrome DevTools Screenshots**: In `take_screenshot`, omit `filePath` so the tool automatically offloads the capture to artifact storage without triggering workspace root containment errors.
+
+
+

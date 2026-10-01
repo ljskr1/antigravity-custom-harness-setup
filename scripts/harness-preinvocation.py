@@ -91,7 +91,15 @@ def main():
     has_graph = any(os.path.exists(os.path.join(p, "graphify-out", "graph.json")) for p in workspace_paths)
     stack_info = detect_stack(workspace_paths)
 
-    ollama_status = f"Active ({', '.join(local_models[:3])})" if local_models else "Offline/Spinning up"
+    if local_models:
+        harness_pref = ["deepseek-r1:8b", "qwen2.5-coder:7b", "qwen2.5-coder:1.5b"]
+        ordered_local = [m for m in harness_pref if m in local_models]
+        for m in local_models:
+            if m not in ordered_local:
+                ordered_local.append(m)
+        ollama_status = f"Active ({', '.join(ordered_local[:3])})"
+    else:
+        ollama_status = "Offline/Spinning up"
     zen_status = f"Active ({', '.join(zen_models[:3])})" if zen_models else "Offline"
 
     guidance = (

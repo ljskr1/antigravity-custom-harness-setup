@@ -169,7 +169,7 @@ function initWorkbench() {
     appendConsole(`[Step 0 Gate] Probing Ollama (11434) and Zen Router (3010)... OK`);
     appendConsole(`[Master Architect] Evaluating Delegation Decision Matrix:`);
 
-    let targetModel = "mimo-v2.5-free";
+    let targetModel = "muse-spark-1.3-contributor-free";
     let targetFile = "src/cache.ts";
     let isDelegated = true;
 

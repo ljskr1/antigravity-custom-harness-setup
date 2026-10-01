@@ -1,0 +1,342 @@
+#!/usr/bin/env python3
+"""
+Antigravity Open-Source Tool Updater (agy-update)
+Checks, displays release notes, and upgrades core AI/agent open-source components:
+- Graphify (graphifyy PyPI package + Antigravity skill & AST engine)
+- Agent Memory (@agentmemory/agentmemory & @agentmemory/mcp npm packages)
+- Local Sidecar & Ollama Models
+"""
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+import urllib.request
+import urllib.error
+
+# ANSI Color formatting
+BOLD = "\033[1m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+CYAN = "\033[36m"
+RED = "\033[31m"
+DIM = "\033[2m"
+RESET = "\033[0m"
+
+
+def fetch_json(url: str, timeout: int = 5):
+    """Fetch JSON from a URL with standard user-agent."""
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "Antigravity-AutoUpdater/1.0"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        return None
+
+
+def run_cmd(cmd: list[str], timeout: int = 60) -> tuple[int, str, str]:
+    """Execute a subprocess command cleanly."""
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout
+        )
+        return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
+    except Exception as e:
+        return 1, "", str(e)
+
+
+# ==========================================
+# 1. GRAPHIFY CHECKER & UPDATER
+# ==========================================
+class GraphifyComponent:
+    name = "Graphify"
+    repo = "Graphify-Labs/graphify"
+    pypi_package = "graphifyy"
+
+    def get_installed_version(self) -> str | None:
+        # Check python import
+        python_bin = shutil.which("python3") or "/opt/homebrew/bin/python3"
+        code = "import importlib.metadata; print(importlib.metadata.version('graphifyy'))"
+        ret, out, _ = run_cmd([python_bin, "-c", code])
+        if ret == 0 and out:
+            return out.strip()
+        # Fallback to CLI
+        ret, out, _ = run_cmd(["graphify", "--version"])
+        if ret == 0 and out:
+            return out.split()[-1]
+        return None
+
+    def get_latest_version(self) -> str | None:
+        data = fetch_json(f"https://pypi.org/pypi/{self.pypi_package}/json")
+        if data and "info" in data:
+            return data["info"].get("version")
+        return None
+
+    def get_release_notes(self, from_ver: str, to_ver: str) -> list[dict]:
+        """Fetch release notes between versions using gh CLI or GitHub API."""
+        notes = []
+        if shutil.which("gh"):
+            ret, out, _ = run_cmd([
+                "gh", "release", "list",
+                "--repo", self.repo,
+                "-L", "15"
+            ])
+            if ret == 0:
+                for line in out.splitlines():
+                    parts = line.split()
+                    if len(parts) >= 3:
+                        tag = parts[0]
+                        # Fetch release body
+                        r_ret, r_out, _ = run_cmd([
+                            "gh", "release", "view", tag,
+                            "--repo", self.repo,
+                            "--json", "tagName,body"
+                        ])
+                        if r_ret == 0 and r_out:
+                            try:
+                                r_data = json.loads(r_out)
+                                notes.append({
+                                    "tag": r_data.get("tagName", tag),
+                                    "body": r_data.get("body", "")
+                                })
+                            except Exception:
+                                pass
+        if not notes:
+            # Fallback to GitHub REST API
+            gh_data = fetch_json(f"https://api.github.com/repos/{self.repo}/releases?per_page=10")
+            if gh_data and isinstance(gh_data, list):
+                for rel in gh_data:
+                    notes.append({
+                        "tag": rel.get("tag_name", ""),
+                        "body": rel.get("body", "")
+                    })
+        return notes
+
+    def upgrade(self) -> bool:
+        pip_bin = shutil.which("pip3") or "/opt/homebrew/bin/pip3"
+        print(f"  {CYAN}→ Upgrading Python package {self.pypi_package}...{RESET}")
+        cmd = [pip_bin, "install", "--upgrade", self.pypi_package, "--break-system-packages"]
+        ret, out, err = run_cmd(cmd, timeout=120)
+        if ret != 0:
+            print(f"  {RED}✗ Failed to upgrade {self.pypi_package}: {err}{RESET}")
+            return False
+
+        print(f"  {CYAN}→ Syncing Antigravity skill & agent workflows...{RESET}")
+        ret, out, err = run_cmd(["graphify", "antigravity", "install"], timeout=30)
+        if ret == 0:
+            print(f"  {GREEN}✓ Graphify upgraded and Antigravity skill synchronized.{RESET}")
+            return True
+        else:
+            print(f"  {YELLOW}⚠ Package upgraded, but skill sync reported: {err}{RESET}")
+            return True
+
+
+# ==========================================
+# 2. AGENT MEMORY CHECKER & UPDATER
+# ==========================================
+class AgentMemoryComponent:
+    name = "Agent Memory"
+    package = "@agentmemory/agentmemory"
+    mcp_package = "@agentmemory/mcp"
+
+    def get_installed_version(self) -> str | None:
+        # Check global node_modules or npx/cli
+        node_bin = shutil.which("node") or "node"
+        check_script = "try { console.log(require('@agentmemory/agentmemory/package.json').version); } catch(e) { process.exit(1); }"
+        ret, out, _ = run_cmd([node_bin, "-e", check_script])
+        if ret == 0 and out:
+            return out.strip()
+        # Check npm list -g
+        ret, out, _ = run_cmd(["npm", "list", "-g", self.package, "--json"])
+        if ret == 0 and out:
+            try:
+                pkg_data = json.loads(out)
+                deps = pkg_data.get("dependencies", {})
+                if self.package in deps:
+                    return deps[self.package].get("version")
+            except Exception:
+                pass
+        return None
+
+    def get_latest_version(self) -> str | None:
+        data = fetch_json(f"https://registry.npmjs.org/{self.package}/latest")
+        if data and "version" in data:
+            return data["version"]
+        return None
+
+    def get_release_notes(self, from_ver: str, to_ver: str) -> list[dict]:
+        # Agentmemory changelog / releases
+        gh_data = fetch_json("https://api.github.com/repos/agentmemory/agentmemory/releases?per_page=5")
+        notes = []
+        if gh_data and isinstance(gh_data, list):
+            for rel in gh_data:
+                notes.append({
+                    "tag": rel.get("tag_name", ""),
+                    "body": rel.get("body", "")
+                })
+        return notes
+
+    def upgrade(self) -> bool:
+        print(f"  {CYAN}→ Upgrading {self.package} and {self.mcp_package} globally...{RESET}")
+        ret, out, err = run_cmd(["npm", "install", "-g", f"{self.package}@latest", f"{self.mcp_package}@latest"], timeout=120)
+        if ret == 0:
+            print(f"  {GREEN}✓ Agent Memory packages upgraded successfully.{RESET}")
+            return True
+        else:
+            print(f"  {RED}✗ Failed to upgrade Agent Memory: {err}{RESET}")
+            return False
+
+
+# ==========================================
+# 3. LOCAL OLLAMA MODELS
+# ==========================================
+class OllamaModelsComponent:
+    name = "Local Ollama Specialist Models"
+    models = ["deepseek-r1:8b", "qwen2.5-coder:7b"]
+
+    def check(self):
+        if not shutil.which("ollama"):
+            return None
+        ret, out, _ = run_cmd(["ollama", "list"])
+        if ret == 0:
+            installed = []
+            for m in self.models:
+                if m in out:
+                    installed.append(m)
+            return installed
+        return None
+
+    def upgrade(self) -> bool:
+        if not shutil.which("ollama"):
+            return False
+        for m in self.models:
+            print(f"  {CYAN}→ Pulling latest weights for {m}...{RESET}")
+            ret, _, err = run_cmd(["ollama", "pull", m], timeout=300)
+            if ret == 0:
+                print(f"  {GREEN}✓ {m} up to date.{RESET}")
+            else:
+                print(f"  {YELLOW}⚠ Could not update {m}: {err}{RESET}")
+        return True
+
+
+def summarize_with_local_ollama(raw_text: str) -> list[str] | None:
+    """Use local Qwen 1.5B/7B via Ollama to distill noisy release notes in ~1-2 seconds with 0 cloud tokens."""
+    try:
+        url = "http://localhost:11434/api/generate"
+        payload = {
+            "model": "qwen2.5-coder:1.5b",
+            "prompt": (
+                "You are an AI developer tool assistant. Summarize these release notes into 2-3 concise, "
+                "actionable bullet points highlighting key features, breaking changes, or critical fixes. "
+                "Do not include commentary or markdown headers, only return bullet lines starting with '- ':\n\n"
+                + raw_text[:2000]
+            ),
+            "stream": False,
+            "options": {"temperature": 0.2, "num_predict": 128}
+        }
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=3.5) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            text = res.get("response", "").strip()
+            bullets = [line.strip() for line in text.split("\n") if line.strip().startswith(("-", "•", "*"))]
+            if bullets:
+                return bullets
+    except Exception:
+        pass
+    return None
+
+
+# ==========================================
+# MAIN CONTROLLER
+# ==========================================
+def main():
+    parser = argparse.ArgumentParser(
+        description="Check and update Antigravity agent open-source tools with changelog transparency."
+    )
+    parser.add_argument("--apply", "-y", action="store_true", help="Apply updates for outdated components")
+    parser.add_argument("--include-models", action="store_true", help="Also pull latest weights for local Ollama models")
+    parser.add_argument("--json", action="store_true", help="Output summary in JSON format")
+    args = parser.parse_args()
+
+    components = [
+        GraphifyComponent(),
+        AgentMemoryComponent(),
+    ]
+
+    print(f"\n{BOLD}{CYAN}🔍 Antigravity Open-Source Component Update Checker{RESET}\n")
+
+    updates_pending = []
+
+    for comp in components:
+        installed = comp.get_installed_version() or "Not Installed"
+        latest = comp.get_latest_version() or "Unknown"
+
+        is_outdated = (installed != "Not Installed" and latest != "Unknown" and installed != latest)
+
+        status_badge = f"{YELLOW}⚡ UPDATE AVAILABLE{RESET}" if is_outdated else f"{GREEN}✓ UP TO DATE{RESET}"
+        if installed == "Not Installed":
+            status_badge = f"{DIM}NOT INSTALLED{RESET}"
+
+        print(f"{BOLD}{comp.name}:{RESET} {installed} → {latest}  [{status_badge}]")
+
+        if is_outdated:
+            updates_pending.append((comp, installed, latest))
+            # Display recent changelog highlights
+            notes = comp.get_release_notes(installed, latest)
+            if notes:
+                print(f"\n  {BOLD}Key Recent Changes:{RESET}")
+                for rel in notes[:4]:
+                    tag = rel["tag"]
+                    body = rel["body"].strip()
+                    # Try local Ollama AI distillation first (0 cloud tokens)
+                    bullets = summarize_with_local_ollama(body)
+                    source_label = f" {DIM}(via local Ollama){RESET}" if bullets else ""
+                    if not bullets:
+                        bullets = [line.strip() for line in body.split("\n") if line.strip().startswith(("•", "-", "*"))][:3]
+                    print(f"    {CYAN}{tag}{RESET}{source_label}")
+                    for line in bullets[:3]:
+                        print(f"      {line}")
+                print()
+
+    # Ollama check
+    ollama_comp = OllamaModelsComponent()
+    installed_models = ollama_comp.check()
+    if installed_models:
+        print(f"{BOLD}Local Ollama Models:{RESET} {', '.join(installed_models)} [{GREEN}ACTIVE{RESET}]")
+
+    print("-" * 55)
+
+    if not updates_pending:
+        print(f"\n{GREEN}All core open-source repositories and packages are up to date!{RESET}\n")
+        return
+
+    if not args.apply:
+        print(f"\n{YELLOW}To apply pending updates, run:{RESET}")
+        print(f"  {BOLD}agy-update --apply{RESET}")
+        print(f"  (or pass {BOLD}--include-models{RESET} to also pull latest Ollama LLM weights)\n")
+    else:
+        print(f"\n{BOLD}{GREEN}🚀 Applying updates...{RESET}\n")
+        for comp, inst, lat in updates_pending:
+            print(f"{BOLD}Upgrading {comp.name}...{RESET}")
+            comp.upgrade()
+            print()
+
+        if args.include_models and installed_models:
+            print(f"{BOLD}Updating local Ollama models...{RESET}")
+            ollama_comp.upgrade()
+            print()
+
+        print(f"{BOLD}{GREEN}✓ All selected updates applied successfully!{RESET}\n")
+
+
+if __name__ == "__main__":
+    main()

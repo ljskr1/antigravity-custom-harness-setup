@@ -21,10 +21,10 @@ from typing import Any, Optional
 # ─── Configuration ───────────────────────────────────────────────────────────
 
 OLLAMA_BASE = "http://localhost:11434"
-OLLAMA_MODELS = ["qwen2.5-coder:1.5b", "qwen2.5-coder:7b"]
+OLLAMA_MODELS = ["qwen2.5-coder:1.5b", "qwen2.5-coder:7b", "deepseek-r1:8b"]
 
 ZEN_ROUTER_URL = "http://localhost:3010/v1/chat/completions"
-ZEN_ROUTER_MODEL = "mimo-v2.5-free"
+ZEN_ROUTER_MODEL = "muse-spark-1.3-contributor-free"
 ZEN_ROUTER_HEADERS = {
     "User-Agent": "curl/8.7.1",
     "Content-Type": "application/json",

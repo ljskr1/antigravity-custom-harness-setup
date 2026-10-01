@@ -157,13 +157,13 @@ def stream_zen_completion(model: str, system: str, user_message: str, timeout: i
 
     return "".join(collected_content)
 
-def call_opencode_run(model: str, system: str, user_message: str, timeout: int = 60) -> str:
+def call_opencode_run(model: str, system: str, user_message: str, timeout: int = 75) -> str:
     """
     Executes worker prompt via local opencode CLI connected to Zen Router (localhost:3010).
     Provides native execution context and prevents upstream 403 FreeTierError.
     """
     full_prompt = f"{system}\n\n{user_message}" if system else user_message
-    candidates = [model] if "/" in model else [f"opencode/{model}", f"zen-router/{model}", model]
+    candidates = [model] if "/" in model else [f"opencode/{model}", model]
     
     last_err = ""
     for spec in candidates:

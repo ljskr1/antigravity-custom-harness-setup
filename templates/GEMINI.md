@@ -1,0 +1,156 @@
+<!-- harness_gate:start -->
+## Mandatory Step 0 Execution Gate
+
+Before outputting code or executing modifying commands:
+1. **Memory Check**: At the START of a task, call `memory_recall` or `memory_smart_search` via `agentmemory` to load past decisions, preferences, and fixes. Do not ask the user to repeat past context.
+2. **Framework Accuracy**: When interacting with modern external packages (Next.js, Supabase, Tailwind, Pydantic, etc.), verify exact signatures using `context7` before guessing.
+3. **Architecture Navigation**: If `graphify-out/graph.json` exists in the project root, query the graph (`graphify query`) before reading dozens of files.
+4. **Local & Zen Worker Offloading**: Route noisy logs through `agy-cleanlog` (Qwen 1.5B), diff reviews through `agy-commit` (Qwen 7B), and heavy boilerplate/code generation to `agy-zen` or MCP `zen_scaffold` (Muse Spark 1.3 / MiMo v2.6-Flash).
+<!-- harness_gate:end -->
+
+<!-- zen_worker:start -->
+## Free Worker Delegation Engine (Zen Router on localhost:3010)
+
+You have access to an active local Zen Router proxy running on `http://localhost:3010` providing free models: `muse-spark-1.3-contributor-free` (1M context), `mimo-v2.6-flash-free` (200k context), and `nemotron-3.5-lightning-free`.
+
+**MASTER-WORKER PROTOCOL TO PRESERVE GEMINI'S CONTEXT WINDOW**:
+1. **Master Architect (Gemini)**: You handle high-level system architecture, planning, interface design, and verification.
+2. **Free Worker Delegation (`zen_scaffold` or `agy-zen`)**: When a task involves writing large new files, massive boilerplate, or extensive mock fixtures, DO NOT burn Gemini's context window generating hundreds of lines of code.
+   - Use the first-class MCP tool `zen_scaffold` (server: `zen-sidecar`) or CLI `agy-zen --model muse-spark-1.3-contributor-free --prompt "<requirements>" --out <path>` via `run_command`.
+   - The worker generates the complete code file directly onto disk with syntax validation, saving thousands of cloud tokens.
+3. **Verification**: Gemini verifies the generated code with tests (`npm test`, `pytest`, `bun`) or surgical line reviews, maintaining a light, ultra-efficient context window throughout the session.
+
+### The Delegation Decision Matrix
+| Category | Delegate to Zen Worker (`agy-zen` / `zen_scaffold`) | Gemini 3.8 Must Write Directly |
+| :--- | :--- | :--- |
+| **Boilerplate & Schemas** | ✅ Single-file CRUD, DTOs, Pydantic/Zod schemas | ❌ Cross-cutting architecture patterns |
+| **Testing & Fixtures** | ✅ Repetitive unit tests, mock payloads, seeds | ❌ E2E integration test harnesses |
+| **Sensitive & Private Data** | ❌ **NEVER** (Meta, MiMo, or free workers — zero privacy leakage) | ✅ Secrets, API keys, credentials, PII, internal proprietary code |
+| **Security & Auth** | ❌ **NEVER** (Hallucination hazard) | ✅ JWT signing, OAuth flows, encryption |
+| **Concurrency & Logic** | ❌ **NEVER** (Race condition hazard) | ✅ Mutexes, rate limiters, WebSocket sync |
+| **Multi-File Refactors** | ❌ **NEVER** (Context truncation risk) | ✅ Coordinated multi-file architectural changes |
+| **Complex App Code** | ❌ **NEVER Local Ollama** (Zen Router for boilerplate only; Gemini writes app code) | ✅ Complex application logic, complete apps, algorithms |
+
+### The Prompt Contract Protocol (Contract-Level Worker Prompting)
+Free Zen worker models (`muse-spark-1.3-contributor-free`, `mimo-v2.6-flash-free`) are literal code executors that default to generic (and often buggy) training habits unless constrained. **Do NOT economize on instruction depth from Cloud Gemini**. Spending 300–500 cloud tokens to provide an exhaustive, contract-level prompt achieves 95%+ first-pass success:
+1. **Explicit DOM & State Contracts**: Specify exact HTML element IDs, `data-*` attributes (e.g. `data-segment="<name>"`), classes, and matching JavaScript event handlers and query selectors so the worker never desynchronizes markup from script.
+2. **Negative Constraints ("NEVER" Rules)**: Explicitly forbid bad training defaults:
+   - e.g., *"NEVER reduce touch targets below 44×44pt in media queries."*
+   - e.g., *"NEVER use linear or ease-in-out transitions for interactive controls."*
+   - e.g., *"NEVER omit accessibility roles (role='tablist', role='tab', aria-selected) or unhandled error states."*
+3. **Exact Mathematical & Physics Tokens**: Supply concrete CSS cubic-bezier curves (e.g., `cubic-bezier(0.25, 1, 0.5, 1)`), exact diffused shadow opacities (alpha ≤ 0.28), and exact typography stacks directly in the prompt so the worker never guesses.
+
+### The 2-Strike Verification & Latency Gate
+- **Zero Sensitive Data to Free Workers**: Sensitive data (API keys, credentials, private secrets, passwords, PII, proprietary IP, and confidential user payloads) must **NEVER** be sent to Meta or MiMo free workers (or any external Zen Router free worker endpoints). All sensitive operations must be handled directly by Cloud Gemini or kept strictly on vetted local execution.
+- **Strict Local Ollama Code Limit**: **Local Ollama models (`qwen2.5-coder:7b`, etc.) are NOT good enough to generate large amounts of code or complex project logic.** NEVER delegate complex codebases, full components, or substantial files to local Ollama.
+- **Latency / Queue Fallback**: If remote Zen Router workers (`muse-spark-1.3-contributor-free`, `mimo-v2.6-flash-free`) experience queue delays or timeouts (>20s), **Cloud Gemini 3.8 Flash takes over immediately** and writes directly to disk. Do NOT fall back to local Ollama for code generation.
+- Every file generated by Zen must be verified with deterministic tooling (`bun`, `tsc`, `py_compile`, or unit tests).
+- If verification fails or exposes a logical contradiction:
+  - **Strike 1**: Issue one surgical correction prompt to `agy-zen` with the compiler/test error.
+  - **Strike 2**: If the worker fails verification a second time, **Gemini takes over immediately** and writes/edits the file directly. Never enter infinite retry loops.
+- **Local DeepSeek-R1 Audit Bounding**: When running `local_audit` or `agy-audit`, extract logic and script blocks (<4,000 tokens) rather than raw SVG or CSS stylesheets. Passing markup bloat causes DeepSeek-R1 to hit 3-minute reasoning deadline timeouts.
+- **Chrome DevTools Screenshots**: In `take_screenshot`, omit `filePath` so the tool automatically offloads the capture to artifact storage without triggering workspace root containment errors.
+
+### Native Multi-Agent Orchestration & Option B Architecture
+- **Native `/teamwork-preview` Protocol**: Runs strictly according to Google's official native specification:
+  1. Drafts `prompt_draft.md` with requirements and objective verification mechanisms.
+  2. Upon user approval, invokes `TypeName: "teamwork_preview"` on Cloud Gemini 3.8 Flash (`Model: "inherit"`).
+  3. Never hijacks `/teamwork-preview` into ad-hoc `self` subagents or injects local shell directives into cloud subagents.
+- **Clean Master-Worker Separation**:
+  - Primary Brain: Cloud Gemini 3.8 Flash natively handles reasoning, architecture, and multi-agent orchestration.
+  - Local & Zen Helpers: Used strictly as auxiliary CLI tools by the main agent for mechanical offloading (`agy-cleanlog`, `agy-commit`, `agy-zen --prompt "..." --out <path>`). Never intercepts or hijacks native cloud agent pipelines.
+<!-- zen_worker:end -->
+
+<!-- agentmemory:start -->
+## Agent Memory (agentmemory)
+
+You have persistent long-term memory via the `agentmemory` MCP server. Tools: `memory_recall`, `memory_smart_search`, `memory_save`, `memory_sessions`.
+
+- At the START of a task, call `memory_recall` (or `memory_smart_search`) with the task context to load relevant past decisions, fixes, and preferences before asking the user to repeat anything.
+- When you learn something durable (a decision, a fix, a gotcha, a user preference, a project convention), call `memory_save` to persist it.
+- Prefer recalling over re-deriving, and save concise reusable facts rather than transcripts.
+<!-- agentmemory:end -->
+
+<!-- context7:start -->
+## Live Documentation & Modern APIs (Context7)
+
+- For modern framework questions, APIs, external libraries, or fast-evolving packages (e.g. Next.js, React, Tailwind, Supabase, Pydantic, Zustand, LangChain):
+  - Consult `context7` for version-exact, verified documentation snippets before relying on web search or guessing.
+  - Avoid hallucinating outdated/deprecated signatures.
+<!-- context7:end -->
+
+<!-- graphify:start -->
+## Codebase Architecture & Knowledge Graph (Graphify)
+
+- When `graphify-out/graph.json` exists in a workspace or project root:
+  - For codebase navigation, call flows, or architecture questions, first query the graph (`graphify query "<question>"`) instead of loading/grepping dozens of files.
+  - Use `graphify path "<A>" "<B>"` to trace paths between components, and `graphify explain "<concept>"` for module overviews.
+  - After making code modifications in a session, run `graphify update .` to keep the local AST graph synchronized.
+<!-- graphify:end -->
+
+<!-- token_efficiency:start -->
+## Token Efficiency & Workflow Best Practices
+
+- **CLI First**: Favor native shell commands (`gh`, `git`, `ast-grep`, `npm`) via `run_command` over heavy, schema-bloated MCP servers to conserve context tokens.
+- **Surgical Reading**: Use targeted line ranges and graph subqueries rather than dumping large files into context.
+- **HTML5 Canvas 2D Limitations**: `ctx.fillStyle` cannot parse CSS gradient strings (`linear-gradient(...)`). When creating color presets destined for `<canvas>` fills, always use valid solid hex/rgb strings or create `CanvasGradient` objects programmatically.
+<!-- token_efficiency:end -->
+
+<!-- local_sidecar:start -->
+## Local LLM Specialist Fleet & Autonomous Tooling
+
+You have an active local Ollama runtime at `http://localhost:11434` and shell helper suite (`~/.local/bin/agy-helpers.zsh`, `~/.local/bin/agy-update`).
+**THE CLOUD MODEL MUST KNOW ALL OF THESE HELPERS AND AUTONOMOUSLY EXECUTE THEM WHEN NECESSARY:**
+
+### Autonomous Execution Matrix
+| Helper Command | Local Model | Role & Advantage | Autonomous Trigger Condition |
+| :--- | :--- | :--- | :--- |
+| **`agy-update`** | `qwen2.5-coder:1.5b` | Distills release notes and changelogs before upgrading dependencies. | Autonomously run `agy-update` when checking, inspecting, or upgrading open-source tools (Graphify, AgentMemory). |
+| **`agy-cleanlog`** | `qwen2.5-coder:1.5b` | Strips progress bars and noise from test runs/builds, isolating core error stacks. | Autonomously pipe test/build stderr/stdout into `agy-cleanlog` or call `local_compress_log` whenever terminal output exceeds 30 lines. |
+| **`agy-commit`** | `qwen2.5-coder:7b` | Audits staged diffs for leaked secrets and crafts Conventional Commits. | Autonomously run `agy-commit` before drafting commit messages or creating git commits. |
+| **`agy-audit`** | `deepseek-r1:8b` | Adversarial reasoning checks on race conditions, concurrency, and mutexes. | Autonomously run `agy-audit <file>` or call `local_audit` when evaluating tricky multithreading, mutexes, race conditions, or complex state logic. |
+| **`agy-graphify`** | `qwen2.5-coder:7b` | Offline AST knowledge graph extraction without burning API limits. | Autonomously run `agy-graphify <dir>` for offline knowledge graph extraction without cloud API consumption. |
+
+**Policy on Local Qwen 2.5 Coder**:
+- `qwen2.5-coder:7b` is strictly restricted to mechanical terminal filters, git diff audits, and offline AST graph extraction.
+- **NEVER use local Qwen 2.5 Coder for project code generation, complex application logic, or code scaffolding in larger projects.**
+- Free code scaffolding is routed to Zen Router (`muse-spark-1.3-contributor-free`). If Zen Router is unavailable or times out, Cloud Gemini writes/edits code directly.
+
+**Guardrails & System Protections**:
+- Input snippets to local models should be bounded (<4,000 tokens).
+- Cloud Gemini 3.7 / 3.8 remains the primary brain for high-level multi-file architecture, planning, and user turns.
+- Models automatically unload after 2 minutes idle (`OLLAMA_KEEP_ALIVE="2m"`) to preserve 100% system memory.
+<!-- local_sidecar:end -->
+
+<!-- self_evolution:start -->
+## Self-Evolution, Skill Generation & Tool Optimization
+
+You have the authority and duty to continuously self-improve, optimize your tools, and create new capabilities:
+
+1. **Autonomous Helper Evolution (`~/.local/bin/agy-helpers.zsh`)**:
+   - If a local helper fails, produces suboptimal output, or hits a formatting edge case, autonomously inspect, fix, or optimize its prompt/script.
+   - When identifying a new high-frequency or heavy-token micro-task, autonomously add a new helper function to `agy-helpers.zsh`.
+   - **Safety Protocol**: Always create a backup (`cp file file.bak`), verify script syntax with `zsh -n`, and log the rationale in `agentmemory`.
+
+2. **Dynamic Skill Creation (`~/.gemini/config/skills/`)**:
+   - When encountering a novel multi-step workflow, complex framework runbook, or recurring tool procedure, propose creating a formal Antigravity Skill (`SKILL.md` + workflows/rules).
+   - Keep skills modular, progressive-disclosure compliant, and documented with clear execution steps.
+
+3. **Dynamic Rule Self-Evolution (`GEMINI.md` & `AGENTS.md`)**:
+   - `~/.gemini/GEMINI.md` and `~/.gemini/AGENTS.md` are living, self-learning cognitive documents that MUST be updated and refined every session whenever:
+     a. A user preference, workflow habit, or operational directive is communicated.
+     b. A non-obvious engineering pattern, framework gotcha, tool failure, or fix is discovered.
+     c. Existing rules become stale, redundant, or can be synthesized for better token efficiency and precision.
+   - Do not let rules remain static: continuously update, organize, and prune them so each session actively learns from and compounds the intelligence of preceding sessions.
+
+4. **Continuous Lesson & Memory Loop**:
+   - On error recovery, edge-case resolution, or user correction, automatically persist a structured lesson via `memory_save` (type: `workflow`, `bug`, or `pattern`).
+   - Simultaneously reflect critical operational changes directly into `GEMINI.md` and `AGENTS.md` so they are immediately active in subsequent turns and sessions.
+<!-- self_evolution:end -->
+
+<!-- slash_command_proactivity:start -->
+## Slash Command Spectrum & Operating Protocols
+
+- Refer to `AGENTS.md` for the authoritative specification of core orchestration slash commands (`/btw`, `/goal`, `/schedule`, `/browser`, `/grill-me`, `/teamwork-preview`, `/zen-team`, `/learn`, `/boost`) and skill-backed commands (`/<skill-name>`).
+- Always follow the operating protocol in `AGENTS.md`: emulate autonomous posture, provide zero-boilerplate contextual recommendations, and maintain Option B clean master-worker separation.
+<!-- slash_command_proactivity:end -->

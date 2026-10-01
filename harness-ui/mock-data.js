@@ -36,16 +36,16 @@ export const HARNESS_TELEMETRY = {
 
   zenWorkers: [
     {
-      model: 'mimo-v2.5-free',
+      model: 'muse-spark-1.3-contributor-free',
       provider: 'ZenRouter',
-      contextWindow: 32768,
+      contextWindow: 1048576,
       costPerToken: 0.0,
       status: 'active'
     },
     {
-      model: 'muse-spark-1.3-contributor-free',
+      model: 'mimo-v2.6-flash-free',
       provider: 'ZenRouter',
-      contextWindow: 16384,
+      contextWindow: 200000,
       costPerToken: 0.0,
       status: 'active'
     },
@@ -103,20 +103,20 @@ export const HARNESS_TELEMETRY = {
   sampleBenchmarks: [
     {
       task: 'LRU Cache Scaffolding',
-      workerModel: 'qwen2.5-coder:7b',
+      workerModel: 'muse-spark-1.3-contributor-free',
       executionTimeMs: 4200,
       astValid: true,
       generatedChars: 3847
     },
     {
       task: 'Pydantic Schema Generation',
-      workerModel: 'mimo-v2.5-free',
+      workerModel: 'mimo-v2.6-flash-free',
       executionTimeMs: 2100,
       astValid: true,
       generatedChars: 2156
     },
     {
-      task: 'Regex Extractor Unit Tests',
+      task: 'Regex Extractor Concurrency Audit',
       workerModel: 'deepseek-r1:8b',
       executionTimeMs: 5870,
       astValid: true,

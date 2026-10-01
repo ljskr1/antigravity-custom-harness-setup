@@ -102,9 +102,9 @@ def main():
         f"• Codebase AST Graph: {'Found (use graphify query)' if has_graph else 'None (use AST grep/search)'}\n"
         f"• Master-Worker Protocol:\n"
         f"  1. Master Architect (Cloud Gemini): Handles macro planning, architecture, and verification.\n"
-        f"  2. Free Code Generation: Delegate heavy file scaffolding to 'agy-zen --prompt \"...\" --out <file>' to protect context.\n"
-        f"  3. Token Efficiency: Pipe noisy logs through agy-cleanlog and diffs through agy-commit.\n"
-        f"  4. Native /teamwork-preview (Option B): Runs native Google 'teamwork_preview' subagent on Cloud Gemini 3.8 Flash (Model: 'inherit') without hijacking. Zen/Ollama act strictly as CLI tools for mechanical offloading."
+        f"  2. Free Code Generation: Use MCP tool 'zen_scaffold' (server: zen-sidecar) instead of write_to_file for large boilerplate/fixtures (0 cloud tokens).\n"
+        f"  3. Local Audits & Logs: Use MCP tool 'local_audit' (DeepSeek-R1) for concurrency/race checks, and 'local_compress_log' / agy-cleanlog for noisy test output.\n"
+        f"  4. Native /teamwork-preview (Option B): Runs native Google 'teamwork_preview' subagent on Cloud Gemini 3.8 Flash (Model: 'inherit') without hijacking."
     )
 
     output = {

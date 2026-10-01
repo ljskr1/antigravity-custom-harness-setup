@@ -15,8 +15,8 @@ You have access to an active local Zen Router proxy running on `http://localhost
 
 **MASTER-WORKER PROTOCOL TO PRESERVE GEMINI'S CONTEXT WINDOW**:
 1. **Master Architect (Gemini)**: You handle high-level system architecture, planning, interface design, and verification.
-2. **Free Worker Delegation (`agy-zen`)**: When a task involves writing large new files, massive boilerplate, or extensive mock fixtures, DO NOT burn Gemini's context window generating hundreds of lines of code.
-   - Run: `agy-zen --model mimo-v2.5-free --prompt "<detailed requirements>" --out <path/to/target/file>` via `run_command`.
+2. **Free Worker Delegation (`zen_scaffold` or `agy-zen`)**: When a task involves writing large new files, massive boilerplate, or extensive mock fixtures, DO NOT burn Gemini's context window generating hundreds of lines of code.
+   - Use the first-class MCP tool `zen_scaffold` (server: `zen-sidecar`) or CLI `agy-zen --model mimo-v2.5-free --prompt "<requirements>" --out <path>` via `run_command`.
    - The worker generates the complete code file directly onto disk with syntax validation, saving thousands of cloud tokens.
 3. **Verification**: Gemini verifies the generated code with tests (`npm test`, `pytest`, `bun`) or surgical line reviews, maintaining a light, ultra-efficient context window throughout the session.
 

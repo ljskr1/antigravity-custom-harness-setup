@@ -1,5 +1,9 @@
 {
   "mcpServers": {
+    "zen-sidecar": {
+      "command": "/Users/lijah/.local/bin/zen-mcp-server",
+      "args": []
+    },
     "agentmemory": {
       "command": "npx",
       "args": [

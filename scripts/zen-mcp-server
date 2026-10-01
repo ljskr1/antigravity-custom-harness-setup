@@ -1,0 +1,488 @@
+#!/usr/bin/env python3
+"""
+Zen Sidecar MCP Server for Antigravity
+Exposes Zen Router (localhost:3010) and local Ollama (localhost:11434)
+as first-class Antigravity MCP tools over stdio JSON-RPC 2.0.
+Zero external dependencies (pure Python standard library).
+"""
+
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+import urllib.request
+import urllib.error
+
+ZEN_URL = os.environ.get("ZEN_ROUTER_URL", "http://localhost:3010/v1/chat/completions")
+ZEN_MODELS_URL = os.environ.get("ZEN_ROUTER_MODELS_URL", "http://localhost:3010/v1/models")
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/chat")
+OLLAMA_TAGS_URL = os.environ.get("OLLAMA_TAGS_URL", "http://localhost:11434/api/tags")
+
+DEFAULT_ZEN_MODEL = "mimo-v2.5-free"
+DEFAULT_AUDIT_MODEL = "deepseek-r1:8b"
+DEFAULT_COMPRESS_MODEL = "qwen2.5-coder:1.5b"
+
+LANGUAGE_EXTENSIONS = {
+    "py": ["python", "py"],
+    "ts": ["typescript", "ts"],
+    "tsx": ["typescript", "tsx", "ts"],
+    "js": ["javascript", "js"],
+    "jsx": ["javascript", "jsx", "js"],
+    "go": ["go"],
+    "rs": ["rust", "rs"],
+    "sql": ["sql"],
+    "json": ["json"],
+    "html": ["html"],
+    "css": ["css"],
+    "sh": ["bash", "sh", "zsh"],
+    "zsh": ["zsh", "bash", "sh"],
+    "yaml": ["yaml", "yml"],
+    "yml": ["yaml", "yml"],
+}
+
+def log(msg: str):
+    """Log to stderr so stdout remains clean JSON-RPC."""
+    sys.stderr.write(f"[zen-mcp] {msg}\n")
+    sys.stderr.flush()
+
+def extract_code(content: str, target_file: str = "") -> str:
+    """Robustly extracts code from LLM response, stripping markdown wrappers."""
+    ext = ""
+    if target_file:
+        ext = os.path.splitext(target_file)[1].lstrip(".").lower()
+    
+    target_tags = LANGUAGE_EXTENSIONS.get(ext, [ext] if ext else [])
+    block_pattern = r"```([a-zA-Z0-9_\-\+]*)\s*\n(.*?)```"
+    blocks = re.findall(block_pattern, content, re.DOTALL)
+    
+    if blocks:
+        if target_tags:
+            matching = [code.strip() for lang, code in blocks if lang.lower() in target_tags]
+            if matching:
+                return "\n\n".join(matching).strip() + "\n"
+            untagged = [code.strip() for lang, code in blocks if not lang.strip()]
+            if untagged:
+                return "\n\n".join(untagged).strip() + "\n"
+        
+        non_shell = [code.strip() for lang, code in blocks if lang.lower() not in ["bash", "sh", "shell", "zsh", "terminal"]]
+        if non_shell and ext not in ["sh", "zsh", "bash"]:
+            return "\n\n".join(non_shell).strip() + "\n"
+        return "\n\n".join(code.strip() for _, code in blocks).strip() + "\n"
+
+    lines = content.strip().splitlines()
+    cleaned = []
+    started = False
+    for line in lines:
+        if not started:
+            if re.match(r"^(here is|below is|sure|okay|i have|let me|note:|# )", line.strip(), re.IGNORECASE):
+                continue
+            started = True
+        cleaned.append(line)
+    return "\n".join(cleaned).strip() + "\n"
+
+def validate_syntax(filepath: str) -> tuple[bool, str]:
+    """Lightweight syntax validation."""
+    ext = os.path.splitext(filepath)[1].lstrip(".").lower()
+    if ext == "py":
+        try:
+            res = subprocess.run(["python3", "-m", "py_compile", filepath], capture_output=True, text=True)
+            if res.returncode == 0:
+                return True, "Python AST valid"
+            return False, res.stderr.strip()
+        except Exception as e:
+            return True, f"Python check skipped ({e})"
+    elif ext in ["ts", "tsx", "js", "jsx"]:
+        try:
+            bun_path = os.path.expanduser("~/.bun/bin/bun")
+            if not os.path.exists(bun_path):
+                bun_path = "bun"
+            res = subprocess.run([bun_path, "build", "--no-bundle", filepath], capture_output=True, text=True)
+            if res.returncode == 0:
+                return True, "Bun JS/TS valid"
+            return False, res.stderr.strip() or res.stdout.strip()
+        except Exception:
+            return True, "JS/TS check skipped"
+    elif ext == "json":
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                json.load(f)
+            return True, "JSON valid"
+        except Exception as e:
+            return False, str(e)
+    return True, "No specific validator"
+
+def call_zen_router(model: str, system: str, user_prompt: str, timeout: int = 90) -> str:
+    """Call Zen Router completions endpoint."""
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_prompt}
+        ],
+        "temperature": 0.2
+    }
+    req = urllib.request.Request(
+        ZEN_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json", "User-Agent": "ZenMCPServer/1.0"}
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+        choices = data.get("choices", [])
+        if choices and "message" in choices[0]:
+            return choices[0]["message"].get("content", "")
+    return ""
+
+def call_ollama(model: str, system: str, user_prompt: str, timeout: int = 90) -> str:
+    """Call local Ollama API."""
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_prompt}
+        ],
+        "stream": False
+    }
+    req = urllib.request.Request(
+        OLLAMA_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json", "User-Agent": "ZenMCPServer/1.0"}
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+        msg = data.get("message", {})
+        return msg.get("content", "")
+
+# ─── Tool Handlers ──────────────────────────────────────────────────────────
+
+def handle_zen_scaffold(args: dict) -> dict:
+    prompt = args.get("prompt", "")
+    target_file = args.get("target_file", "")
+    model = args.get("model", DEFAULT_ZEN_MODEL)
+
+    if not target_file:
+        return {"content": [{"type": "text", "text": "Error: target_file is required"}], "isError": True}
+    if not prompt:
+        return {"content": [{"type": "text", "text": "Error: prompt is required"}], "isError": True}
+
+    cmd = ["agy-zen", "--model", model, "--prompt", prompt, "--out", target_file]
+    log(f"Delegating scaffold to agy-zen CLI (model: {model}, target: {target_file})...")
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        output = res.stdout.strip() or res.stderr.strip()
+        if res.returncode == 0:
+            return {
+                "content": [{
+                    "type": "text",
+                    "text": f"✅ {output}\n• Cloud Tokens Consumed: 0 (100% free Zen worker)"
+                }],
+                "isError": False
+            }
+        else:
+            return {
+                "content": [{"type": "text", "text": f"❌ Scaffolding failed: {output}"}],
+                "isError": True
+            }
+    except Exception as e:
+        return {
+            "content": [{"type": "text", "text": f"Error executing agy-zen: {e}"}],
+            "isError": True
+        }
+
+def handle_local_audit(args: dict) -> dict:
+    file_path = args.get("file_path", "")
+    if not file_path or not os.path.exists(file_path):
+        return {
+            "content": [{"type": "text", "text": f"Error: File not found: {file_path}"}],
+            "isError": True
+        }
+
+    with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+        code = f.read()
+
+    system = (
+        "You are an adversarial code safety and concurrency auditor. "
+        "Analyze the provided code for race conditions, deadlocks, subtle edge cases, "
+        "and resource leaks. Output a concise 5-bullet report with exact lines and remediation."
+    )
+    user_prompt = f"Audit this code ({file_path}):\n\n```\n{code}\n```"
+
+    log(f"Running deep audit on {file_path} via local Ollama ({DEFAULT_AUDIT_MODEL})...")
+    try:
+        report = call_ollama(DEFAULT_AUDIT_MODEL, system, user_prompt)
+    except Exception as e:
+        log(f"Ollama {DEFAULT_AUDIT_MODEL} failed: {e}. Falling back to qwen2.5-coder:7b...")
+        try:
+            report = call_ollama("qwen2.5-coder:7b", system, user_prompt)
+        except Exception as e2:
+            return {
+                "content": [{"type": "text", "text": f"Error: Local Ollama audit failed: {e2}"}],
+                "isError": True
+            }
+
+    return {
+        "content": [{"type": "text", "text": f"🔍 Local Audit Report ({file_path}):\n\n{report}"}],
+        "isError": False
+    }
+
+def handle_local_compress_log(args: dict) -> dict:
+    log_text = args.get("log_text", "")
+    if not log_text.strip():
+        return {
+            "content": [{"type": "text", "text": "Error: log_text is empty"}],
+            "isError": True
+        }
+
+    system = (
+        "You are a developer log compression filter. Extract ONLY the root cause error, "
+        "failing test/module name, and relevant stack trace in under 12 lines. "
+        "Strip all noisy passing tests, build logs, and progress bars."
+    )
+    user_prompt = f"Compress this terminal log:\n\n{log_text[:8000]}"
+
+    log(f"Compressing log via local Ollama ({DEFAULT_COMPRESS_MODEL})...")
+    try:
+        summary = call_ollama(DEFAULT_COMPRESS_MODEL, system, user_prompt)
+    except Exception:
+        try:
+            summary = call_ollama("qwen2.5-coder:7b", system, user_prompt)
+        except Exception as e:
+            return {
+                "content": [{"type": "text", "text": f"Error: Local Ollama log compression failed: {e}"}],
+                "isError": True
+            }
+
+    return {
+        "content": [{"type": "text", "text": summary}],
+        "isError": False
+    }
+
+def handle_zen_status(args: dict) -> dict:
+    zen_models = []
+    try:
+        req = urllib.request.Request(ZEN_MODELS_URL, headers={"User-Agent": "curl/8.7.1"})
+        with urllib.request.urlopen(req, timeout=2.0) as resp:
+            data = json.loads(resp.read().decode())
+            zen_models = [m.get("id", "") for m in data.get("data", []) if m.get("id")]
+    except Exception as e:
+        zen_err = str(e)
+    else:
+        zen_err = None
+
+    ollama_models = []
+    try:
+        req = urllib.request.Request(OLLAMA_TAGS_URL, headers={"User-Agent": "curl/8.7.1"})
+        with urllib.request.urlopen(req, timeout=1.0) as resp:
+            data = json.loads(resp.read().decode())
+            ollama_models = [m.get("name", "") for m in data.get("models", []) if m.get("name")]
+    except Exception as e:
+        ollama_err = str(e)
+    else:
+        ollama_err = None
+
+    zen_report = f"ONLINE (Available: {', '.join(zen_models[:5])})" if not zen_err else f"OFFLINE ({zen_err})"
+    ollama_report = f"ONLINE (Available: {', '.join(ollama_models[:5])})" if not ollama_err else f"OFFLINE ({ollama_err})"
+
+    text = (
+        f"⚡ Zen Router & Local LLM Status Report:\n"
+        f"• Zen Router (http://localhost:3010): {zen_report}\n"
+        f"• Local Ollama (http://localhost:11434): {ollama_report}\n"
+        f"• Primary Free Scaffold Worker: {DEFAULT_ZEN_MODEL}\n"
+        f"• Primary Concurrency Auditor: {DEFAULT_AUDIT_MODEL}\n"
+        f"• Primary Log Compressor: {DEFAULT_COMPRESS_MODEL}"
+    )
+
+    return {
+        "content": [{"type": "text", "text": text}],
+        "isError": False
+    }
+
+# ─── Tool Definitions ────────────────────────────────────────────────────────
+
+TOOLS = [
+    {
+        "name": "zen_scaffold",
+        "description": (
+            "Scaffolds boilerplate files, schemas, and mock fixtures directly onto disk "
+            "using free local Zen Router models (mimo-v2.5-free, muse-spark-1.3-contributor-free, nemotron-3.5-lightning-free). "
+            "USE THIS TOOL INSTEAD OF write_to_file for generating large new files, repetitive DTOs, "
+            "unit tests, and mock fixtures to conserve Cloud Gemini context tokens with 0 cost."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string",
+                    "description": "Exhaustive contract-level prompt specifying exact imports, classes, functions, and logic."
+                },
+                "target_file": {
+                    "type": "string",
+                    "description": "Path to the destination file to create/overwrite."
+                },
+                "model": {
+                    "type": "string",
+                    "description": "Zen model to use: 'mimo-v2.5-free' (default, 200k context), 'muse-spark-1.3-contributor-free' (1M context), or 'nemotron-3.5-lightning-free'.",
+                    "default": "mimo-v2.5-free"
+                }
+            },
+            "required": ["prompt", "target_file"]
+        }
+    },
+    {
+        "name": "local_audit",
+        "description": (
+            "Performs deep adversarial algorithmic, concurrency, deadlock, and race-condition audits "
+            "of a code file using local Ollama (deepseek-r1:8b). Zero cloud tokens consumed."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "Path to the source file to audit."
+                }
+            },
+            "required": ["file_path"]
+        }
+    },
+    {
+        "name": "local_compress_log",
+        "description": (
+            "Compresses noisy, verbose test outputs, stack traces, or build logs down to the core failing lines "
+            "using local Ollama (qwen2.5-coder:1.5b). Strips passing test logs and progress bars."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "log_text": {
+                    "type": "string",
+                    "description": "Verbose raw logs or test failure trace to compress."
+                }
+            },
+            "required": ["log_text"]
+        }
+    },
+    {
+        "name": "zen_status",
+        "description": "Probes real-time status, health, and models of local Zen Router (localhost:3010) and Ollama (localhost:11434).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {}
+        }
+    }
+]
+
+TOOL_HANDLERS = {
+    "zen_scaffold": handle_zen_scaffold,
+    "local_audit": handle_local_audit,
+    "local_compress_log": handle_local_compress_log,
+    "zen_status": handle_zen_status,
+}
+
+# ─── JSON-RPC Dispatcher ────────────────────────────────────────────────────
+
+def respond(response: dict):
+    line = json.dumps(response) + "\n"
+    sys.stdout.write(line)
+    sys.stdout.flush()
+
+def main():
+    log("Zen Sidecar MCP server starting on stdio...")
+    while True:
+        line = sys.stdin.readline()
+        if not line:
+            break
+        line = line.strip()
+        if not line:
+            continue
+
+        try:
+            req = json.loads(line)
+        except Exception as e:
+            log(f"Invalid JSON: {e}")
+            continue
+
+        msg_id = req.get("id")
+        method = req.get("method")
+        params = req.get("params", {})
+
+        # Handle notification (no id)
+        if msg_id is None:
+            if method == "notifications/initialized":
+                log("Client sent notifications/initialized")
+            continue
+
+        if method == "initialize":
+            respond({
+                "jsonrpc": "2.0",
+                "id": msg_id,
+                "result": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {
+                        "tools": {}
+                    },
+                    "serverInfo": {
+                        "name": "zen-sidecar-mcp",
+                        "version": "1.0.0"
+                    }
+                }
+            })
+        elif method == "ping":
+            respond({
+                "jsonrpc": "2.0",
+                "id": msg_id,
+                "result": {}
+            })
+        elif method == "tools/list":
+            respond({
+                "jsonrpc": "2.0",
+                "id": msg_id,
+                "result": {
+                    "tools": TOOLS
+                }
+            })
+        elif method == "tools/call":
+            tool_name = params.get("name")
+            tool_args = params.get("arguments", {})
+            handler = TOOL_HANDLERS.get(tool_name)
+            if not handler:
+                respond({
+                    "jsonrpc": "2.0",
+                    "id": msg_id,
+                    "error": {
+                        "code": -32601,
+                        "message": f"Tool '{tool_name}' not found"
+                    }
+                })
+            else:
+                try:
+                    result = handler(tool_args)
+                    respond({
+                        "jsonrpc": "2.0",
+                        "id": msg_id,
+                        "result": result
+                    })
+                except Exception as e:
+                    log(f"Error executing {tool_name}: {e}")
+                    respond({
+                        "jsonrpc": "2.0",
+                        "id": msg_id,
+                        "result": {
+                            "content": [{"type": "text", "text": f"Error: {str(e)}"}],
+                            "isError": True
+                        }
+                    })
+        else:
+            respond({
+                "jsonrpc": "2.0",
+                "id": msg_id,
+                "error": {
+                    "code": -32601,
+                    "message": f"Method '{method}' not found"
+                }
+            })
+
+if __name__ == "__main__":
+    main()

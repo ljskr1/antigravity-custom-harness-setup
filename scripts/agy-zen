@@ -15,8 +15,10 @@ import urllib.request
 import urllib.error
 
 ZEN_URL = os.environ.get("ZEN_ROUTER_URL", "http://localhost:3010/v1/chat/completions")
-DEFAULT_MODEL = "mimo-v2.5-free"
+DEFAULT_MODEL = "mimo-v2.6-flash-free"
 FALLBACK_MODEL = "muse-spark-1.3-contributor-free"
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/chat")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5-coder:7b")
 
 LANGUAGE_EXTENSIONS = {
     "py": ["python", "py"],
@@ -113,7 +115,7 @@ def validate_syntax(filepath: str) -> tuple[bool, str]:
             return False, str(e)
     return True, "No specific validator"
 
-def stream_zen_completion(model: str, system: str, user_message: str, timeout: int = 90) -> str:
+def stream_zen_completion(model: str, system: str, user_message: str, timeout: int = 60) -> str:
     payload = {
         "model": model,
         "messages": [
@@ -155,7 +157,7 @@ def stream_zen_completion(model: str, system: str, user_message: str, timeout: i
 
     return "".join(collected_content)
 
-def call_opencode_run(model: str, system: str, user_message: str, timeout: int = 120) -> str:
+def call_opencode_run(model: str, system: str, user_message: str, timeout: int = 60) -> str:
     """
     Executes worker prompt via local opencode CLI connected to Zen Router (localhost:3010).
     Provides native execution context and prevents upstream 403 FreeTierError.
@@ -168,12 +170,34 @@ def call_opencode_run(model: str, system: str, user_message: str, timeout: int =
         return res.stdout
     raise RuntimeError(f"opencode run exited with code {res.returncode}: {res.stderr.strip() or res.stdout.strip()}")
 
+def call_ollama(system: str, user_message: str, model: str = OLLAMA_MODEL, timeout: int = 60) -> str:
+    """
+    Executes worker prompt via local Ollama daemon (localhost:11434).
+    Guarantees 100% offline, deterministic code generation when Zen Router is offline or rate-limited.
+    """
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_message}
+        ],
+        "stream": False
+    }
+    req = urllib.request.Request(
+        OLLAMA_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"}
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+        return data.get("message", {}).get("content", "")
+
 def call_zen_with_fallback(model: str, system: str, user_message: str) -> tuple[str, str]:
     # 1. Prefer opencode CLI routing to localhost:3010 if installed
     if shutil.which("opencode"):
         for candidate in [model, FALLBACK_MODEL]:
             try:
-                content = call_opencode_run(candidate, system, user_message)
+                content = call_opencode_run(candidate, system, user_message, timeout=60)
                 if content.strip():
                     return content, candidate
             except Exception as e:
@@ -181,14 +205,29 @@ def call_zen_with_fallback(model: str, system: str, user_message: str) -> tuple[
 
     # 2. Fall back to direct HTTP stream
     try:
-        content = stream_zen_completion(model, system, user_message)
+        content = stream_zen_completion(model, system, user_message, timeout=60)
         if content.strip():
             return content, model
     except Exception as e:
         print(f"Warning: Primary model {model} HTTP stream failed: {e}. Attempting fallback to {FALLBACK_MODEL}...", file=sys.stderr)
 
-    content = stream_zen_completion(FALLBACK_MODEL, system, user_message)
-    return content, FALLBACK_MODEL
+    try:
+        content = stream_zen_completion(FALLBACK_MODEL, system, user_message, timeout=60)
+        if content.strip():
+            return content, FALLBACK_MODEL
+    except Exception as e:
+        print(f"Warning: Fallback model {FALLBACK_MODEL} HTTP stream failed: {e}.", file=sys.stderr)
+
+    # 3. Fall back to local Ollama fleet (qwen2.5-coder:7b)
+    print(f"Info: Zen Router unavailable; falling back to local Ollama ({OLLAMA_MODEL})...", file=sys.stderr)
+    try:
+        content = call_ollama(system, user_message, OLLAMA_MODEL)
+        if content.strip():
+            return content, f"ollama/{OLLAMA_MODEL}"
+    except Exception as e:
+        print(f"Warning: Local Ollama fallback failed: {e}", file=sys.stderr)
+
+    raise RuntimeError("All workers (Zen Router and local Ollama) failed to generate code.")
 
 def main():
     parser = argparse.ArgumentParser(description="Antigravity Zen Router Worker Client")

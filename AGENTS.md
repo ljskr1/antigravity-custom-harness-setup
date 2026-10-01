@@ -21,7 +21,7 @@ The slash command palette (`/`) encompasses two distinct categories:
 - **`/browser`**: Dedicated browser automation agent for DOM scraping, navigation, and web verification.
 - **`/grill-me`**: Interactive interview mode to dissect requirements, test edge cases, and align on architecture before coding.
 - **`/teamwork-preview`**: Parallel subagent fleet to divide and conquer large deliverables across isolated workspaces (Google Cloud native).
-- **`/zen-team`**: Autonomous two-phase teamwork fleet powered by local Zen Router (MiMo v2.5 / Muse Spark) and Ollama (DeepSeek-R1) with zero cloud token consumption.
+- **`/zen-team`**: Autonomous two-phase teamwork fleet powered by local Zen Router (MiMo v2.6-Flash / Muse Spark 1.3) and Ollama (DeepSeek-R1) with zero cloud token consumption.
 - **`/learn`**: Reflect on corrections or workflows to capture durable rules and skills.
 - **`/boost`**: Deep multi-agent orchestrator for complex reasoning, planning, and high-assurance algorithmic audits.
 
@@ -64,7 +64,7 @@ Every active skill in your system (e.g. `/apple-design`, `/modern-web-guidance`,
   - These sidecar tools never intercept, modify, or hijack Google's native cloud agent pipeline.
 
 ### 3. The Prompt Contract Protocol (Contract-Level Worker Prompting)
-- Small and free worker models (`qwen2.5-coder:7b`, `mimo-v2.5-free`) are literal code executors that default to generic training habits unless constrained.
+- Small and free worker models (`qwen2.5-coder:7b`, `mimo-v2.6-flash-free`) are literal code executors that default to generic training habits unless constrained.
 - **Never economize on instruction depth from Cloud Gemini**: Spending 300–500 cloud tokens to provide an exhaustive, contract-level prompt achieves 95%+ first-pass success:
   1. **Explicit DOM & State Contracts**: Specify exact HTML element IDs, `data-*` attributes (e.g. `data-segment="<name>"`), classes, and matching JavaScript event handlers and query selectors so the worker never desynchronizes markup from script.
   2. **Negative Constraints ("NEVER" Rules)**: Explicitly forbid bad training defaults:
